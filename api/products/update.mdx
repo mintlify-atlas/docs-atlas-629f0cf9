@@ -1,0 +1,184 @@
+---
+title: 'Update Product'
+api: 'PUT /api/Productos/{idProducto}'
+description: 'Update an existing product in the catalog'
+---
+
+## Authentication
+
+This endpoint requires authentication. Include the JWT token in the Authorization header.
+
+```
+Authorization: Bearer {token}
+```
+
+<Note>
+This endpoint typically requires admin or manager role permissions.
+</Note>
+
+## Path Parameters
+
+<ParamField path="idProducto" type="integer" required>
+  The unique identifier of the product to update
+</ParamField>
+
+## Request Body
+
+Provide the complete product object with updated values. All fields should be included even if not being changed.
+
+<ParamField body="idProducto" type="integer" required>
+  Must match the ID in the URL path
+</ParamField>
+
+<ParamField body="nombre" type="string" required>
+  Product name (max 100 characters)
+</ParamField>
+
+<ParamField body="precio" type="decimal" required>
+  Product price (decimal with 2 precision points)
+</ParamField>
+
+<ParamField body="img" type="string">
+  URL or path to the product image
+</ParamField>
+
+<ParamField body="stockActual" type="integer" required>
+  Current stock quantity
+</ParamField>
+
+<ParamField body="stockMinimo" type="integer" required>
+  Minimum stock threshold before reorder alert
+</ParamField>
+
+<ParamField body="idCategoria" type="integer" required>
+  Foreign key reference to the product category (must exist)
+</ParamField>
+
+<ParamField body="descripcion" type="string">
+  Product description
+</ParamField>
+
+### Request Example
+
+```json
+{
+  "idProducto": 1,
+  "nombre": "Alimento para Perros Premium Plus",
+  "precio": 49.99,
+  "img": "/images/productos/alimento-perros-plus.jpg",
+  "stockActual": 175,
+  "stockMinimo": 25,
+  "idCategoria": 1,
+  "descripcion": "Alimento balanceado premium mejorado para perros adultos con ingredientes naturales"
+}
+```
+
+## Response
+
+### Success Response (204 No Content)
+
+A successful update returns no content body. The 204 status code indicates the update was successful.
+
+### Error Response (400 Bad Request)
+
+```json
+"Error message describing what went wrong"
+```
+
+Common errors:
+- Product ID mismatch between URL and body
+- Invalid category ID
+- Missing required fields
+- Product not found
+- Invalid data types or constraints
+
+## Code Example
+
+```bash
+curl -X PUT https://api.huellitas.com/api/Productos/1 \
+  -H "Authorization: Bearer {your_token_here}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idProducto": 1,
+    "nombre": "Alimento para Perros Premium Plus",
+    "precio": 49.99,
+    "img": "/images/productos/alimento-perros-plus.jpg",
+    "stockActual": 175,
+    "stockMinimo": 25,
+    "idCategoria": 1,
+    "descripcion": "Alimento balanceado premium mejorado para perros adultos con ingredientes naturales"
+  }'
+```
+
+```javascript
+const productId = 1;
+const productoActualizado = {
+  idProducto: productId,
+  nombre: "Alimento para Perros Premium Plus",
+  precio: 49.99,
+  img: "/images/productos/alimento-perros-plus.jpg",
+  stockActual: 175,
+  stockMinimo: 25,
+  idCategoria: 1,
+  descripcion: "Alimento balanceado premium mejorado para perros adultos con ingredientes naturales"
+};
+
+const response = await fetch(`https://api.huellitas.com/api/Productos/${productId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(productoActualizado)
+});
+
+if (response.status === 204) {
+  console.log('Producto actualizado exitosamente');
+} else {
+  const error = await response.text();
+  console.error('Error:', error);
+}
+```
+
+```python
+import requests
+
+product_id = 1
+producto_actualizado = {
+    "idProducto": product_id,
+    "nombre": "Alimento para Perros Premium Plus",
+    "precio": 49.99,
+    "img": "/images/productos/alimento-perros-plus.jpg",
+    "stockActual": 175,
+    "stockMinimo": 25,
+    "idCategoria": 1,
+    "descripcion": "Alimento balanceado premium mejorado para perros adultos con ingredientes naturales"
+}
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.put(f'https://api.huellitas.com/api/Productos/{product_id}', 
+                       json=producto_actualizado, 
+                       headers=headers)
+
+if response.status_code == 204:
+    print('Producto actualizado exitosamente')
+else:
+    print(f'Error: {response.text}')
+```
+
+## Important Notes
+
+- This is a full update operation. Include all fields in the request body.
+- The `idProducto` in the request body must match the `idProducto` in the URL path.
+- A 204 No Content response indicates success (no response body is returned).
+- For partial updates, this API would need a PATCH endpoint (currently not implemented).
+
+## Source Reference
+
+Controller: `Huellitas.API/Controllers/ProductosController.cs:79`
+
+Entity: `Huellitas.Core/Entities/Producto.cs`

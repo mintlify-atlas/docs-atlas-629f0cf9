@@ -1,80 +1,260 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get Huellitas Pet Shop running locally in under 10 minutes
 ---
 
-## Get started in three steps
+This guide will help you set up Huellitas Pet Shop on your local machine for development and testing.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, ensure you have the following installed:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title=".NET 9.0 SDK" icon="code">
+    Download from [dotnet.microsoft.com](https://dotnet.microsoft.com/download)
+  </Card>
+  <Card title="Node.js 18+" icon="node-js">
+    Download from [nodejs.org](https://nodejs.org/)
+  </Card>
+  <Card title="PostgreSQL 14+" icon="database">
+    Download from [postgresql.org](https://www.postgresql.org/download/)
+  </Card>
+  <Card title="Git" icon="git">
+    Download from [git-scm.com](https://git-scm.com/)
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Setup Steps
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Huellitas repository to your local machine:
+
+    ```bash
+    git clone https://github.com/dominguezmicaela/petshopHuellitas.git
+    cd petshopHuellitas
+    ```
+  </Step>
+
+  <Step title="Configure the database">
+    Create a PostgreSQL database for the project:
+
+    ```bash
+    psql -U postgres
+    CREATE DATABASE huellitas;
+    \q
+    ```
+
+    Navigate to the backend API project and create an `appsettings.json` file:
+
+    ```bash
+    cd huellitasBackEnd/Huellitas.API
+    ```
+
+    Create `appsettings.json` with your database connection:
+
+    ```json appsettings.json
+    {
+      "ConnectionStrings": {
+        "DefaultConnection": "Host=localhost;Database=huellitas;Username=postgres;Password=your_password"
+      },
+      "Jwt": {
+        "Key": "your-secret-key-at-least-32-characters-long",
+        "Issuer": "HuellitasAPI",
+        "Audience": "HuellitasClient"
+      }
+    }
+    ```
+
+    <Warning>
+      Replace `your_password` with your PostgreSQL password and generate a secure random string for the JWT `Key` field (at least 32 characters).
+    </Warning>
+  </Step>
+
+  <Step title="Run database migrations">
+    Apply Entity Framework migrations to create the database schema:
+
+    ```bash
+    cd huellitasBackEnd/Huellitas.API
+    dotnet ef database update
+    ```
+
+    <Tip>
+      If you don't have the EF Core tools installed, run:
+      ```bash
+      dotnet tool install --global dotnet-ef
+      ```
+    </Tip>
+  </Step>
+
+  <Step title="Start the backend API">
+    Restore dependencies and run the .NET API:
+
+    ```bash
+    cd huellitasBackEnd/Huellitas.API
+    dotnet restore
+    dotnet run
+    ```
+
+    The API will start on `http://localhost:5000`. You should see:
+
+    ```
+    Now listening on: http://localhost:5000
+    Application started. Press Ctrl+C to shut down.
+    ```
+
+    <Check>
+      Visit `http://localhost:5000/swagger` to explore the API documentation
+    </Check>
+  </Step>
+
+  <Step title="Start the frontend">
+    In a new terminal window, navigate to the frontend directory:
+
+    ```bash
+    cd huellitas-frontend
+    npm install
+    npm run dev
+    ```
+
+    The React application will start on `http://localhost:5173`.
+
+    <Check>
+      Open your browser and visit `http://localhost:5173` to see the Huellitas Pet Shop homepage
+    </Check>
+  </Step>
+</Steps>
+
+## What's Next?
+
+Now that you have Huellitas running locally, you can:
+
+<CardGroup cols={2}>
+  <Card title="Explore the Architecture" icon="sitemap" href="/architecture">
+    Learn about the three-tier architecture and design patterns
+  </Card>
+  <Card title="Backend Setup" icon="server" href="/backend/setup">
+    Deep dive into the .NET API configuration
+  </Card>
+  <Card title="Frontend Development" icon="react" href="/frontend/setup">
+    Understand the React SPA structure
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/products/list">
+    Explore all available endpoints
+  </Card>
+</CardGroup>
+
+## Test the Application
+
+### Browse Products
+
+1. Open `http://localhost:5173` in your browser
+2. Browse the product catalog
+3. Click on a product to view details
+
+### Add Items to Cart
+
+1. Click "Agregar al carrito" on any product
+2. Navigate to the cart page using the cart icon
+3. Adjust quantities or remove items
+
+### Admin Access
+
+<Warning>
+  The admin dashboard requires authentication. You'll need to create a user account and assign the admin role in the database first.
+</Warning>
+
+1. Navigate to `http://localhost:5173/#/login`
+2. Log in with admin credentials
+3. Access the dashboard at `http://localhost:5173/#/admin`
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Database connection errors">
+    Verify your PostgreSQL service is running:
+    
+    ```bash
+    # Windows
+    pg_ctl status -D "C:\Program Files\PostgreSQL\14\data"
+    
+    # macOS/Linux
+    sudo service postgresql status
+    ```
+    
+    Check your connection string in `appsettings.json` matches your PostgreSQL configuration.
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    If port 5000 or 5173 is already in use, you can change it:
+    
+    **Backend (5000):** Edit `Properties/launchSettings.json` in Huellitas.API
+    
+    **Frontend (5173):** Vite will automatically try the next available port
+  </Accordion>
+
+  <Accordion title="CORS errors">
+    The backend is configured to allow all origins in development. If you still see CORS errors:
+    
+    1. Check that the backend is running
+    2. Verify the API URL in your frontend code
+    3. Clear your browser cache
+  </Accordion>
+
+  <Accordion title="JWT authentication fails">
+    Common JWT issues:
+    
+    - Ensure the JWT `Key` in `appsettings.json` is at least 32 characters
+    - Verify `Issuer` and `Audience` match between backend and frontend
+    - Check that tokens haven't expired (default lifetime is set in `AuthService`)
+  </Accordion>
+</AccordionGroup>
+
+## Development Scripts
+
+### Backend Commands
+
+```bash
+# Restore dependencies
+dotnet restore
+
+# Run the application
+dotnet run
+
+# Run with hot reload
+dotnet watch run
+
+# Build for production
+dotnet publish -c Release -o ./publish
+
+# Create a new migration
+dotnet ef migrations add MigrationName
+
+# Update database to latest migration
+dotnet ef database update
+```
+
+### Frontend Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Deploy to GitHub Pages
+npm run deploy
+```
+
+## Next Steps
+
+<Card title="Learn More" icon="book" href="/introduction">
+  Read the full introduction to understand the project's goals and features
+</Card>

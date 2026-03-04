@@ -1,97 +1,221 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Welcome to Huellitas Pet Shop
+description: Full-stack e-commerce platform for pet products built with React, .NET, and PostgreSQL
+mode: custom
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#FF8C42] via-[#FFB380] to-[#E67A2E] dark:from-[#E67A2E] dark:via-[#FF8C42] dark:to-[#FFB380] py-20">
+  <div className="max-w-6xl mx-auto px-6 text-center">
+    <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+      Huellitas Pet Shop Documentation
+    </h1>
+    <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-10">
+      Learn how to build, deploy, and extend a modern full-stack e-commerce platform with React, .NET API, and PostgreSQL
+    </p>
+    <div className="flex flex-wrap justify-center gap-4">
+      <a 
+        href="/quickstart" 
+        className="inline-flex items-center px-8 py-3.5 text-lg font-semibold text-[#FF8C42] bg-white rounded-lg hover:bg-gray-50 transition-colors no-underline"
+      >
+        Get Started
+      </a>
+      <a 
+        href="/api/products/list" 
+        className="inline-flex items-center px-8 py-3.5 text-lg font-semibold text-white border-2 border-white/30 bg-white/10 rounded-lg hover:bg-white/20 transition-colors no-underline"
+      >
+        Explore API
+      </a>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Quick Start</h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">Get Huellitas running locally in minutes</p>
+  </div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+  <Steps>
+    <Step title="Clone the repository">
+      Clone the Huellitas repository to your local machine:
 
-## Make it yours
+      ```bash
+      git clone https://github.com/dominguezmicaela/petshopHuellitas.git
+      cd petshopHuellitas
+      ```
+    </Step>
 
-Design a docs site that looks great and empowers your users.
+    <Step title="Set up the backend">
+      Navigate to the backend directory and configure your database connection:
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+      ```bash
+      cd huellitasBackEnd
+      dotnet restore
+      ```
 
-## Create beautiful pages
+      Create an `appsettings.json` file with your PostgreSQL connection string and JWT configuration.
 
-Everything you need to create world-class documentation.
+      <Accordion title="Example appsettings.json">
+        ```json
+        {
+          "ConnectionStrings": {
+            "DefaultConnection": "Host=localhost;Database=huellitas;Username=postgres;Password=your_password"
+          },
+          "Jwt": {
+            "Key": "your-secret-key-here",
+            "Issuer": "HuellitasAPI",
+            "Audience": "HuellitasClient"
+          }
+        }
+        ```
+      </Accordion>
+    </Step>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+    <Step title="Run the API">
+      Start the .NET API server:
 
-## Need inspiration?
+      ```bash
+      cd Huellitas.API
+      dotnet run
+      ```
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+      The API will be available at `http://localhost:5000`. Visit `http://localhost:5000/swagger` to explore the API documentation.
+    </Step>
+
+    <Step title="Set up the frontend">
+      In a new terminal, navigate to the frontend directory and install dependencies:
+
+      ```bash
+      cd huellitas-frontend
+      npm install
+      npm run dev
+      ```
+
+      The React app will be available at `http://localhost:5173`. You can now browse products, add items to your cart, and test the authentication flow.
+    </Step>
+  </Steps>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Key Features</h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">Everything you need for a modern e-commerce platform</p>
+  </div>
+
+  <CardGroup cols={2}>
+    <Card title="Shopping Cart" icon="cart-shopping" href="/frontend/cart-system">
+      LocalStorage-based cart system with add, remove, and quantity management
+    </Card>
+    <Card title="JWT Authentication" icon="lock" href="/backend/authentication">
+      Secure user authentication with JSON Web Tokens and role-based access control
+    </Card>
+    <Card title="Admin Dashboard" icon="gauge" href="/guides/admin-dashboard">
+      Manage products, view user analytics, and monitor 580+ registered users
+    </Card>
+    <Card title="RESTful API" icon="code" href="/api/products/list">
+      Well-documented endpoints with Swagger UI for products, orders, and authentication
+    </Card>
+    <Card title="Responsive Design" icon="mobile" href="/frontend/components">
+      Mobile-first React components that work seamlessly on all devices
+    </Card>
+    <Card title="Data Pipeline" icon="database" href="/guides/data-pipeline">
+      Python scripts for automated product categorization and data loading
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Explore by Topic</h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">Deep dive into different parts of the platform</p>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <a 
+      href="/frontend/setup" 
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#FF8C42] dark:hover:border-[#FF8C42] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Frontend Development</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Learn about the React SPA architecture, component structure, routing with React Router, and state management
+        </p>
+        <div className="flex items-center text-[#FF8C42] text-sm font-medium">
+          <span>Explore frontend docs</span>
+          <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a 
+      href="/backend/setup" 
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#FF8C42] dark:hover:border-[#FF8C42] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Backend Development</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Understand the .NET API architecture, Entity Framework Core models, repository pattern, and service layer
+        </p>
+        <div className="flex items-center text-[#FF8C42] text-sm font-medium">
+          <span>Explore backend docs</span>
+          <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a 
+      href="/api/products/list" 
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#FF8C42] dark:hover:border-[#FF8C42] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">API Reference</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Complete API documentation for authentication, products, and orders with request/response examples
+        </p>
+        <div className="flex items-center text-[#FF8C42] text-sm font-medium">
+          <span>View API reference</span>
+          <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a 
+      href="/guides/deployment" 
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#FF8C42] dark:hover:border-[#FF8C42] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Deployment Guides</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Deploy the backend to Render and the frontend to GitHub Pages with Docker containerization
+        </p>
+        <div className="flex items-center text-[#FF8C42] text-sm font-medium">
+          <span>View deployment guides</span>
+          <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl bg-gradient-to-r from-[#FF8C42] to-[#E67A2E] p-10 text-center">
+    <h2 className="text-3xl font-bold text-white mb-4">Ready to get started?</h2>
+    <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
+      Follow our quickstart guide to set up Huellitas locally or explore the API reference to integrate with your own projects
+    </p>
+    <a 
+      href="/quickstart" 
+      className="inline-flex items-center px-8 py-3.5 text-lg font-semibold text-[#FF8C42] bg-white rounded-lg hover:bg-gray-50 transition-colors no-underline"
+    >
+      Start Building
+    </a>
+  </div>
+</div>

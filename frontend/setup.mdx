@@ -1,0 +1,217 @@
+---
+title: Frontend Setup
+description: Setup guide for the Huellitas Pet Shop frontend application
+---
+
+## Overview
+
+The Huellitas Pet Shop frontend is built with React 18, Vite, and modern UI libraries including Framer Motion for animations. The application uses React Router for navigation and Context API for state management.
+
+## Technology Stack
+
+### Core Dependencies
+
+```json package.json
+{
+  "dependencies": {
+    "axios": "^1.6.0",
+    "framer-motion": "^12.34.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.0"
+  }
+}
+```
+
+<CardGroup cols={2}>
+  <Card title="React 18" icon="react" iconType="duotone">
+    Modern React with hooks and concurrent features
+  </Card>
+  <Card title="Vite" icon="bolt" iconType="duotone">
+    Lightning-fast build tool and dev server
+  </Card>
+  <Card title="Framer Motion" icon="wand-magic-sparkles" iconType="duotone">
+    Powerful animation library for React
+  </Card>
+  <Card title="React Router v6" icon="route" iconType="duotone">
+    Client-side routing with latest features
+  </Card>
+</CardGroup>
+
+### Development Dependencies
+
+```json package.json
+{
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.23",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.2.0",
+    "gh-pages": "^6.3.0"
+  }
+}
+```
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone <repository-url>
+    cd huellitas-frontend
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Start development server">
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173`
+  </Step>
+</Steps>
+
+## Project Structure
+
+```
+huellitas-frontend/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── Carrito/        # Cart-related components
+│   │   ├── Contacto/       # Contact form components
+│   │   ├── Login/          # Authentication UI
+│   │   ├── Producto/       # Product card components
+│   │   ├── Header.jsx      # Main navigation header
+│   │   ├── Footer.jsx      # Site footer
+│   │   └── FilterSidebar.jsx
+│   ├── pages/              # Page components
+│   │   ├── Home/
+│   │   ├── Cart/
+│   │   ├── Contact/
+│   │   ├── Login/
+│   │   └── Admin/
+│   ├── context/            # React Context providers
+│   │   └── CarritoContext.jsx
+│   ├── hooks/              # Custom React hooks
+│   │   └── useCarrito.js
+│   ├── App.jsx             # Main app component
+│   ├── main.jsx            # Application entry point
+│   └── index.css           # Global styles
+├── package.json
+├── vite.config.js
+└── index.html
+```
+
+## Configuration
+
+### Vite Configuration
+
+The application uses a custom base path for GitHub Pages deployment:
+
+```javascript vite.config.js
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig(({ command }) => {
+  return {
+    plugins: [react()],
+    base: command === "build" ? "/petshopHuellitas/" : "/",
+  };
+});
+```
+
+<Info>
+  The `base` path is set to `/petshopHuellitas/` for production builds to support GitHub Pages hosting.
+</Info>
+
+### Entry Point
+
+The application bootstraps with React Context providers:
+
+```jsx src/main.jsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { HashRouter } from "react-router-dom";
+import App from "./App";
+import { CarritoProvider } from "./context/CarritoContext";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <HashRouter>
+      <CarritoProvider>
+        <App />
+      </CarritoProvider>
+    </HashRouter>
+  </React.StrictMode>
+);
+```
+
+<Note>
+  Uses `HashRouter` instead of `BrowserRouter` for GitHub Pages compatibility.
+</Note>
+
+## Available Scripts
+
+<CodeGroup>
+```bash Development
+npm run dev
+# Starts Vite development server on port 5173
+```
+
+```bash Build
+npm run build
+# Creates optimized production build in dist/
+```
+
+```bash Preview
+npm run preview
+# Preview production build locally
+```
+
+```bash Deploy
+npm run deploy
+# Build and deploy to GitHub Pages
+```
+</CodeGroup>
+
+## Environment Setup
+
+### Prerequisites
+
+- Node.js 16.x or higher
+- npm 8.x or higher
+- Modern browser with ES6+ support
+
+### Browser Support
+
+The application supports all modern browsers:
+- Chrome/Edge (last 2 versions)
+- Firefox (last 2 versions)
+- Safari (last 2 versions)
+
+<Warning>
+  Internet Explorer is not supported due to the use of modern JavaScript features.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Components" icon="puzzle-piece" href="/frontend/components">
+    Learn about the component architecture
+  </Card>
+  <Card title="Routing" icon="route" href="/frontend/routing">
+    Explore the routing configuration
+  </Card>
+  <Card title="Cart System" icon="cart-shopping" href="/frontend/cart-system">
+    Understand the shopping cart implementation
+  </Card>
+  <Card title="Backend API" icon="server" href="/backend/setup">
+    Connect to the backend API
+  </Card>
+</CardGroup>

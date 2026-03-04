@@ -1,0 +1,795 @@
+---
+title: 'Admin Dashboard'
+description: 'Comprehensive guide to the Huellitas admin panel features and analytics'
+---
+
+## Overview
+
+The Huellitas Admin Panel provides a centralized interface for managing the pet shop's operations, analyzing customer behavior, and monitoring inventory. Built with React, the dashboard features a modern, responsive design with collapsible navigation.
+
+**Key Features:**
+- Strategic business analytics
+- User management
+- Stock control
+- Looker Studio integration for data visualization
+
+---
+
+## Accessing the Admin Panel
+
+### URL
+
+- **Local Development**: `http://localhost:5173/Admin`
+- **Production**: `https://yourusername.github.io/petshopHuellitas/Admin`
+
+### Authentication
+
+Admins must authenticate with role-based access:
+
+```javascript
+// Check if user has admin role (idRol === 1)
+if (user.idRol !== 1) {
+  navigate('/');  // Redirect non-admins
+}
+```
+
+---
+
+## Dashboard Layout
+
+### Component Structure
+
+The admin panel uses a grid-based layout:
+
+```jsx
+// From AdminPanel.jsx:10
+<div className={`admin-grid-container ${collapsed ? 'collapsed' : ''}`}>
+  <div className="admin-top-bar">...</div>
+  <aside className="sidebar-section">...</aside>
+  <main className="dashboard-main-area">...</main>
+</div>
+```
+
+### Grid Layout
+
+```
+┌─────────────────────────────────────────┐
+│         Top Bar (Logo, User, Logout)    │
+├──────────┬──────────────────────────────┤
+│          │                              │
+│ Sidebar  │    Main Dashboard Area       │
+│ (Nav)    │    (Analytics & Reports)     │
+│          │                              │
+└──────────┴──────────────────────────────┘
+```
+
+---
+
+## Top Bar Features
+
+### Brand Section
+
+```jsx
+// AdminPanel.jsx:14-21
+<div className="topbar-left">
+  <div className="topbar-brand">
+    <img src="/img/LOGO.jpg" alt="Logo" className="topbar-logo" />
+    <div>
+      <h1 className="topbar-title">Huellitas Admin</h1>
+      <p className="topbar-subtitle">Panel de Administración</p>
+    </div>
+  </div>
+</div>
+```
+
+**Elements:**
+- Company logo (150x150px recommended)
+- Panel title
+- Subtitle for context
+
+### User Info Display
+
+```jsx
+// AdminPanel.jsx:24-28
+<div className="topbar-user">
+  <div className="user-avatar">M</div>
+  <span className="user-name">Micaela</span>
+</div>
+```
+
+**Features:**
+- User avatar with initial
+- Display name from authentication context
+- Visual confirmation of logged-in user
+
+### Navigation Buttons
+
+```jsx
+// AdminPanel.jsx:30-36
+<Link to="/" className="topbar-btn">
+  🏠 Volver al Home
+</Link>
+
+<button className="topbar-btn logout">
+  🚪 Cerrar Sesión
+</button>
+```
+
+<Note>
+  Implement logout functionality by calling the authentication service:
+  ```jsx
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/');
+  };
+  ```
+</Note>
+
+---
+
+## Sidebar Navigation
+
+### Collapsible Menu
+
+The sidebar supports collapsing to save screen space:
+
+```jsx
+// AdminPanel.jsx:6-7
+const [activeSection, setActiveSection] = useState('estrategico');
+const [collapsed, setCollapsed] = useState(false);
+
+// AdminPanel.jsx:43-49
+<button 
+  className="sidebar-toggle"
+  onClick={() => setCollapsed(!collapsed)}
+  title={collapsed ? 'Expandir menú' : 'Contraer menú'}
+>
+  {collapsed ? '➡️' : '⬅️'}
+</button>
+```
+
+**States:**
+- **Expanded**: Full menu with text labels
+- **Collapsed**: Icon-only menu
+
+### Menu Sections
+
+Three main sections for different admin tasks:
+
+#### 1. Strategic Analysis
+
+```jsx
+// AdminPanel.jsx:56-62
+<button 
+  className={`nav-link ${activeSection === 'estrategico' ? 'active' : ''}`}
+  onClick={() => setActiveSection('estrategico')}
+>
+  <span className="nav-icon">📊</span>
+  <span className="nav-text">Análisis Estratégico</span>
+</button>
+```
+
+**Purpose:** Business intelligence and decision-making reports
+
+**Features:**
+- Sales trends
+- Customer segmentation analysis
+- Product performance metrics
+- Revenue forecasting
+
+#### 2. User Management
+
+```jsx
+// AdminPanel.jsx:64-70
+<button 
+  className={`nav-link ${activeSection === 'usuarios' ? 'active' : ''}`}
+  onClick={() => setActiveSection('usuarios')}
+>
+  <span className="nav-icon">👥</span>
+  <span className="nav-text">Gestión de Usuarios</span>
+</button>
+```
+
+**Purpose:** Manage customer accounts and permissions
+
+**Capabilities:**
+- View all registered users
+- Edit user details
+- Assign customer segments (CatLover, DogLover, Aves, Exóticos)
+- Manage roles (Admin, User)
+- Suspend/activate accounts
+
+**Example Implementation:**
+
+```jsx
+const UserManagement = () => {
+  const [users, setUsers] = useState([]);
+  
+  useEffect(() => {
+    fetch('https://huellitas-api.onrender.com/api/usuarios')
+      .then(res => res.json())
+      .then(data => setUsers(data));
+  }, []);
+  
+  return (
+    <div className="user-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Segmento</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map(user => (
+            <tr key={user.idUsuario}>
+              <td>{user.nombre} {user.apellido}</td>
+              <td>{user.email}</td>
+              <td>{user.segmentoCliente}</td>
+              <td>
+                <button>Editar</button>
+                <button>Suspender</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+```
+
+#### 3. Stock Control
+
+```jsx
+// AdminPanel.jsx:72-78
+<button 
+  className={`nav-link ${activeSection === 'stock' ? 'active' : ''}`}
+  onClick={() => setActiveSection('stock')}
+>
+  <span className="nav-icon">📦</span>
+  <span className="nav-text">Control de Stock</span>
+</button>
+```
+
+**Purpose:** Inventory management and product tracking
+
+**Features:**
+- Real-time stock levels
+- Low stock alerts
+- Product categories overview
+- Restock recommendations
+
+**Example Dashboard:**
+
+```jsx
+const StockControl = () => {
+  const [products, setProducts] = useState([]);
+  const [lowStock, setLowStock] = useState([]);
+  
+  useEffect(() => {
+    fetch('https://huellitas-api.onrender.com/api/productos')
+      .then(res => res.json())
+      .then(data => {
+        setProducts(data);
+        setLowStock(data.filter(p => p.stockActual < 10));
+      });
+  }, []);
+  
+  return (
+    <div className="stock-dashboard">
+      <div className="stock-stats">
+        <div className="stat-card">
+          <h3>{products.length}</h3>
+          <p>Total Products</p>
+        </div>
+        <div className="stat-card alert">
+          <h3>{lowStock.length}</h3>
+          <p>Low Stock Alerts</p>
+        </div>
+      </div>
+      
+      <div className="stock-table">
+        <h2>Low Stock Products</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Stock Actual</th>
+              <th>Categoría</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lowStock.map(product => (
+              <tr key={product.idProducto}>
+                <td>{product.nombre}</td>
+                <td className="stock-low">{product.stockActual}</td>
+                <td>{product.categoria}</td>
+                <td>
+                  <button>Restock</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## Main Dashboard Area
+
+### Looker Studio Integration
+
+```jsx
+// AdminPanel.jsx:83-89
+<main className="dashboard-main-area">
+  <div className="dashboard-card">
+    <div className="looker-frame">
+      <h2>Reporte de Decisiones</h2>
+      <p>Visualización de datos de 580 usuarios</p>
+    </div>
+  </div>
+</main>
+```
+
+**Purpose:** Embed Google Looker Studio reports for advanced analytics
+
+### Embedding Looker Reports
+
+Replace the placeholder with an actual Looker Studio embed:
+
+```jsx
+<iframe
+  src="https://lookerstudio.google.com/embed/reporting/YOUR_REPORT_ID"
+  width="100%"
+  height="800px"
+  frameBorder="0"
+  style={{ border: 0 }}
+  allowFullScreen
+  sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+></iframe>
+```
+
+### Creating Looker Reports
+
+1. **Connect Data Source**
+   - Go to [Looker Studio](https://lookerstudio.google.com/)
+   - Click **Create** → **Data Source**
+   - Select **PostgreSQL** connector
+   - Enter Huellitas database credentials
+
+2. **Build Report**
+   - Create visualizations:
+     - Sales by customer segment (pie chart)
+     - Product category performance (bar chart)
+     - Monthly revenue trend (line chart)
+     - User growth (area chart)
+
+3. **Configure Sharing**
+   - Click **Share** → **Embed report**
+   - Copy embed code
+   - Paste into dashboard
+
+### Sample Report Metrics
+
+**Customer Segmentation:**
+```sql
+SELECT 
+  "segmentoCliente",
+  COUNT(*) as total_usuarios,
+  SUM(pedidos.total) as revenue
+FROM "Usuario"
+LEFT JOIN "Pedido" ON "Usuario"."idUsuario" = "Pedido"."idUsuario"
+GROUP BY "segmentoCliente"
+ORDER BY revenue DESC;
+```
+
+**Top Products:**
+```sql
+SELECT 
+  p."nombre",
+  p."categoria",
+  COUNT(dp."idDetallePedido") as unidades_vendidas,
+  SUM(dp."cantidad" * dp."precioUnitario") as revenue
+FROM "Producto" p
+JOIN "DetallePedido" dp ON p."idProducto" = dp."idProducto"
+GROUP BY p."idProducto", p."nombre", p."categoria"
+ORDER BY unidades_vendidas DESC
+LIMIT 10;
+```
+
+**Monthly Sales:**
+```sql
+SELECT 
+  DATE_TRUNC('month', "fechaPedido") as mes,
+  COUNT(*) as total_pedidos,
+  SUM("total") as revenue
+FROM "Pedido"
+WHERE "estado" = 'Completado'
+GROUP BY mes
+ORDER BY mes DESC;
+```
+
+---
+
+## Styling and Customization
+
+### CSS Classes
+
+The admin panel uses these key CSS classes:
+
+```css
+/* AdminPanel.css */
+
+/* Main container */
+.admin-grid-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: 70px 1fr;
+  height: 100vh;
+}
+
+.admin-grid-container.collapsed {
+  grid-template-columns: 70px 1fr;
+}
+
+/* Top bar */
+.admin-top-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* Sidebar */
+.sidebar-section {
+  background: #2d3748;
+  color: white;
+  padding: 1rem;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 80px;
+  right: -15px;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+/* Navigation */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+  background: #667eea;
+  font-weight: bold;
+}
+
+/* Collapsed state */
+.collapsed .nav-text {
+  display: none;
+}
+
+.collapsed .nav-icon {
+  font-size: 1.5rem;
+}
+
+/* Main dashboard */
+.dashboard-main-area {
+  padding: 2rem;
+  background: #f7fafc;
+  overflow-y: auto;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+```
+
+### Responsive Design
+
+```css
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .admin-grid-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: 70px auto 1fr;
+  }
+  
+  .sidebar-section {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  
+  .collapsed {
+    grid-template-rows: 70px 0 1fr;
+  }
+  
+  .collapsed .sidebar-section {
+    display: none;
+  }
+}
+```
+
+---
+
+## Data Visualization Examples
+
+### Customer Segment Distribution
+
+```jsx
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+
+const SegmentChart = ({ data }) => {
+  const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe'];
+  
+  return (
+    <PieChart width={400} height={400}>
+      <Pie
+        data={data}
+        cx={200}
+        cy={200}
+        labelLine={false}
+        label
+        outerRadius={120}
+        fill="#8884d8"
+        dataKey="value"
+      >
+        {data.map((entry, index) => (
+          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        ))}
+      </Pie>
+      <Tooltip />
+      <Legend />
+    </PieChart>
+  );
+};
+
+// Usage
+const segmentData = [
+  { name: 'CatLover', value: 150 },
+  { name: 'DogLover', value: 280 },
+  { name: 'Aves', value: 90 },
+  { name: 'Exóticos', value: 60 }
+];
+```
+
+### Sales Trend Line Chart
+
+```jsx
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+
+const SalesTrend = ({ data }) => (
+  <LineChart width={800} height={400} data={data}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="mes" />
+    <YAxis />
+    <Tooltip />
+    <Legend />
+    <Line type="monotone" dataKey="revenue" stroke="#667eea" strokeWidth={2} />
+  </LineChart>
+);
+```
+
+---
+
+## Security Considerations
+
+### Role-Based Access Control
+
+```jsx
+import { useAuth } from '../context/AuthContext';
+import { Navigate } from 'react-router-dom';
+
+function AdminPanel() {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <div>Loading...</div>;
+  
+  // Only allow admin users (idRol === 1)
+  if (!user || user.idRol !== 1) {
+    return <Navigate to="/" replace />;
+  }
+  
+  // Rest of component...
+}
+```
+
+### API Authentication
+
+All admin API calls should include JWT token:
+
+```javascript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://huellitas-api.onrender.com/api'
+});
+
+// Add auth token to requests
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
+```
+
+### Data Validation
+
+Validate all form inputs before submission:
+
+```jsx
+const updateUser = async (userId, data) => {
+  // Validate email format
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    throw new Error('Invalid email format');
+  }
+  
+  // Validate segment
+  const validSegments = ['CatLover', 'DogLover', 'Aves', 'Exóticos'];
+  if (!validSegments.includes(data.segmentoCliente)) {
+    throw new Error('Invalid customer segment');
+  }
+  
+  try {
+    const response = await api.put(`/usuarios/${userId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Update failed:', error);
+    throw error;
+  }
+};
+```
+
+---
+
+## Performance Optimization
+
+### Lazy Loading Sections
+
+```jsx
+import { lazy, Suspense } from 'react';
+
+const StrategicAnalysis = lazy(() => import('./sections/StrategicAnalysis'));
+const UserManagement = lazy(() => import('./sections/UserManagement'));
+const StockControl = lazy(() => import('./sections/StockControl'));
+
+function AdminPanel() {
+  const [activeSection, setActiveSection] = useState('estrategico');
+  
+  const renderSection = () => {
+    switch(activeSection) {
+      case 'estrategico':
+        return <StrategicAnalysis />;
+      case 'usuarios':
+        return <UserManagement />;
+      case 'stock':
+        return <StockControl />;
+      default:
+        return <StrategicAnalysis />;
+    }
+  };
+  
+  return (
+    <div className="admin-grid-container">
+      {/* Sidebar navigation */}
+      <main className="dashboard-main-area">
+        <Suspense fallback={<div>Loading section...</div>}>
+          {renderSection()}
+        </Suspense>
+      </main>
+    </div>
+  );
+}
+```
+
+### Data Caching
+
+```jsx
+import { useQuery } from 'react-query';
+
+const useProducts = () => {
+  return useQuery('products', async () => {
+    const response = await api.get('/productos');
+    return response.data;
+  }, {
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
+  });
+};
+```
+
+---
+
+## Future Enhancements
+
+### Planned Features
+
+- **Real-time notifications** for low stock and new orders
+- **Export functionality** for reports (CSV, PDF)
+- **Advanced filtering** in user and product tables
+- **Bulk operations** for user management
+- **Order management** section with fulfillment tracking
+- **Customer support chat** integration
+- **Email campaign** builder for marketing
+
+### Analytics Expansion
+
+- Predictive analytics for stock management
+- Customer lifetime value (CLV) calculations
+- A/B testing framework for product recommendations
+- Cohort analysis for user retention
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Dashboard not loading:**
+- Check authentication token validity
+- Verify user has admin role (idRol === 1)
+- Inspect browser console for errors
+
+**Looker reports not displaying:**
+- Confirm embed URL is correct
+- Check iframe sandbox permissions
+- Verify report sharing settings in Looker Studio
+
+**API calls failing:**
+- Ensure backend is deployed and running
+- Check CORS configuration in API
+- Verify JWT token is included in headers
+
+**Sidebar toggle not working:**
+- Check state management for `collapsed` variable
+- Verify CSS classes are applied correctly
+- Inspect event handlers in DevTools
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api/products/list">
+    Explore API endpoints used by the admin panel
+  </Card>
+  <Card title="Deployment Guide" icon="rocket" href="/guides/deployment">
+    Learn how to deploy the admin panel to production
+  </Card>
+</CardGroup>

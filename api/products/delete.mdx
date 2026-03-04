@@ -1,0 +1,135 @@
+---
+title: 'Delete Product'
+api: 'DELETE /api/Productos/{idProducto}'
+description: 'Remove a product from the catalog'
+---
+
+## Authentication
+
+This endpoint requires authentication. Include the JWT token in the Authorization header.
+
+```
+Authorization: Bearer {token}
+```
+
+<Warning>
+This endpoint typically requires admin role permissions. Deleting a product is a permanent action.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="idProducto" type="integer" required>
+  The unique identifier of the product to delete
+</ParamField>
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+"Producto eliminado correctamente"
+```
+
+### Error Response (404 Not Found)
+
+```json
+"No existe el producto por lo tanto  no se pudo eliminar"
+```
+
+This error occurs when:
+- The product ID doesn't exist in the database
+- The product was already deleted
+
+## Code Example
+
+```bash
+curl -X DELETE https://api.huellitas.com/api/Productos/15 \
+  -H "Authorization: Bearer {your_token_here}"
+```
+
+```javascript
+const productId = 15;
+
+const response = await fetch(`https://api.huellitas.com/api/Productos/${productId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer ' + token
+  }
+});
+
+if (response.ok) {
+  const message = await response.json();
+  console.log(message); // "Producto eliminado correctamente"
+} else if (response.status === 404) {
+  console.log('Producto no encontrado');
+}
+```
+
+```python
+import requests
+
+product_id = 15
+headers = {
+    'Authorization': f'Bearer {token}'
+}
+
+response = requests.delete(f'https://api.huellitas.com/api/Productos/{product_id}', 
+                          headers=headers)
+
+if response.status_code == 200:
+    print(response.json())  # "Producto eliminado correctamente"
+elif response.status_code == 404:
+    print('Producto no encontrado')
+```
+
+```csharp
+using System.Net.Http;
+using System.Net.Http.Headers;
+
+var client = new HttpClient();
+client.DefaultRequestHeaders.Authorization = 
+    new AuthenticationHeaderValue("Bearer", token);
+
+var productId = 15;
+var response = await client.DeleteAsync(
+    $"https://api.huellitas.com/api/Productos/{productId}");
+
+if (response.IsSuccessStatusCode)
+{
+    var message = await response.Content.ReadAsStringAsync();
+    Console.WriteLine(message); // "Producto eliminado correctamente"
+}
+else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+{
+    Console.WriteLine("Producto no encontrado");
+}
+```
+
+## Important Notes
+
+<Warning>
+**Cascade Considerations**: Before deleting a product, ensure:
+- No active orders reference this product
+- Check for foreign key constraints with the `Detalle` entity
+- Consider soft-delete alternatives for maintaining order history
+</Warning>
+
+### Best Practices
+
+1. **Verify Before Delete**: Always fetch the product first to confirm it exists and check dependencies
+2. **Soft Delete Alternative**: Consider marking products as inactive rather than permanently deleting them
+3. **Audit Trail**: Log deletion actions for compliance and troubleshooting
+4. **Stock Management**: Handle inventory adjustments if needed before deletion
+
+### Related Operations
+
+Instead of deleting, consider:
+- Setting `stockActual` to 0 to mark as out of stock
+- Adding an `isActive` flag for soft deletion
+- Moving to an archived products table
+
+## Source Reference
+
+Controller: `Huellitas.API/Controllers/ProductosController.cs:65`
+
+Entity: `Huellitas.Core/Entities/Producto.cs`

@@ -1,0 +1,231 @@
+---
+title: 'Backend Setup'
+description: 'Set up the Huellitas Pet Shop .NET backend API'
+---
+
+## Prerequisites
+
+Before setting up the backend, ensure you have:
+
+- **.NET 9.0 SDK** or later
+- **PostgreSQL** database server
+- **Visual Studio 2022** or **VS Code** with C# extension
+- **Entity Framework Core CLI tools**
+
+## Project Structure Overview
+
+The Huellitas backend follows a clean architecture pattern with four distinct projects:
+
+```
+huellitasBackEnd/
+├── Huellitas.API/          # Web API controllers and configuration
+├── Huellitas.Core/         # Domain entities, DTOs, and interfaces
+├── Huellitas.Data/         # Data access, repositories, and EF context
+├── Huellitas.Service/      # Business logic and service layer
+└── Huellitas.sln           # Solution file
+```
+
+## Installation Steps
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd huellitasBackEnd
+```
+
+### 2. Install Dependencies
+
+Restore NuGet packages for all projects:
+
+```bash
+dotnet restore
+```
+
+**Key Dependencies:**
+- `Microsoft.AspNetCore.Authentication.JwtBearer` (9.0.0) - JWT authentication
+- `Npgsql.EntityFrameworkCore.PostgreSQL` (9.0.2) - PostgreSQL provider
+- `Microsoft.EntityFrameworkCore.Design` (9.0.0) - EF Core migrations
+- `Swashbuckle.AspNetCore` (10.1.0) - API documentation
+- `BCrypt.Net` - Password hashing
+
+### 3. Configure Database Connection
+
+Create an `appsettings.json` file in the `Huellitas.API/` directory:
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database=huellitas;Username=your_user;Password=your_password"
+  },
+  "Jwt": {
+    "Key": "your-secret-key-min-32-characters-long",
+    "Issuer": "HuellitasAPI",
+    "Audience": "HuellitasClients"
+  }
+}
+```
+
+<Warning>
+  The JWT `Key` must be at least 32 characters long for security purposes. Never commit this file with production secrets to version control.
+</Warning>
+
+### 4. Create the Database
+
+Create a PostgreSQL database:
+
+```bash
+psql -U postgres
+CREATE DATABASE huellitas;
+\q
+```
+
+### 5. Run Migrations
+
+Apply Entity Framework migrations to create database tables:
+
+```bash
+cd Huellitas.API
+dotnet ef database update
+```
+
+This will create the following tables:
+- `Usuario` - User accounts
+- `Rol` - User roles (Admin, Cliente)
+- `Categoria` - Product categories
+- `producto` - Products
+- `Pedido` - Orders
+- `Detalle` - Order details
+
+### 6. Run the Application
+
+Start the development server:
+
+```bash
+dotnet run
+```
+
+The API will be available at:
+- **HTTP:** `http://localhost:5000`
+- **HTTPS:** `https://localhost:5001`
+- **Swagger UI:** `https://localhost:5001/swagger`
+
+## Configuration Details
+
+### CORS Policy
+
+The API is configured to accept requests from any origin (`PermitirFrontend` policy):
+
+```csharp Program.cs:54
+builder.Services.AddCors(options =>
+{
+   options.AddPolicy("PermitirFrontend",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+```
+
+<Note>
+  In production, restrict CORS to specific origins for security.
+</Note>
+
+### JWT Authentication
+
+Authentication is configured in `Program.cs:14-42` using Bearer tokens:
+
+```csharp Program.cs:25
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidateAudience = true,
+        ValidAudience = jwtSettings["Audience"],
+        ValidateLifetime = true
+    };
+});
+```
+
+### Dependency Injection
+
+Services and repositories are registered in `Program.cs:65-68`:
+
+```csharp Program.cs:65
+builder.Services.AddScoped<IProductoRepositorio, ProductoRepositorio>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+```
+
+## Environment Variables
+
+For production deployment, configure these environment variables:
+
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `ConnectionStrings__DefaultConnection` | PostgreSQL connection string | `Host=db;Database=huellitas;...` |
+| `Jwt__Key` | JWT signing key | `your-secure-key-here` |
+| `Jwt__Issuer` | JWT issuer | `HuellitasAPI` |
+| `Jwt__Audience` | JWT audience | `HuellitasClients` |
+
+## Troubleshooting
+
+### Migration Errors
+
+If you encounter migration errors:
+
+```bash
+# Remove existing migrations
+rm -rf Huellitas.Data/Migrations/
+
+# Create new migration
+dotnet ef migrations add Initial --project Huellitas.Data --startup-project Huellitas.API
+
+# Apply migration
+dotnet ef database update --project Huellitas.API
+```
+
+### JWT Configuration Error
+
+If you see "ERROR FATAL! No se encontró la propiedad 'Key'", ensure your `appsettings.json` contains the `Jwt` section with a valid `Key` property.
+
+### Database Connection Issues
+
+Verify your PostgreSQL connection:
+
+```bash
+psql -h localhost -U your_user -d huellitas
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Project Structure" icon="folder-tree" href="/backend/project-structure">
+    Learn about the four-project architecture
+  </Card>
+  <Card title="Authentication" icon="lock" href="/backend/authentication">
+    Understand JWT authentication implementation
+  </Card>
+  <Card title="Database" icon="database" href="/backend/database">
+    Explore Entity Framework and data models
+  </Card>
+</CardGroup>

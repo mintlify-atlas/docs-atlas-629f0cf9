@@ -1,0 +1,426 @@
+---
+title: 'Deployment Guide'
+description: 'Deploy Huellitas Pet Shop to Render and GitHub Pages'
+---
+
+## Overview
+
+Huellitas Pet Shop consists of two main components:
+- **Backend API**: .NET 9.0 API deployed to Render using Docker
+- **Frontend**: React + Vite application deployed to GitHub Pages
+
+This guide covers the deployment process for both components.
+
+---
+
+## Backend Deployment to Render
+
+### Prerequisites
+
+- GitHub account with the Huellitas repository
+- Render account (free tier available)
+- PostgreSQL database (Neon or Render PostgreSQL)
+
+### Dockerfile Configuration
+
+The backend uses a multi-stage Dockerfile for optimal image size:
+
+```dockerfile
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY . .
+
+RUN dotnet publish $(find . -name "Huellitas.API.csproj") -c Release -o /app/publish
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
+ENTRYPOINTRY ["dotnet", "Huellitas.API.dll"]
+```
+
+Key features:
+- **Multi-stage build**: Reduces final image size by separating build and runtime
+- **Port 8080**: Standard port for Render web services
+- **ASP.NET Core 9.0**: Latest .NET runtime
+
+### Render Setup Steps
+
+#### 1. Create New Web Service
+
+1. Log in to [Render Dashboard](https://dashboard.render.com/)
+2. Click **New +** → **Web Service**
+3. Connect your GitHub repository
+4. Select the `huellitasBackEnd` directory
+
+#### 2. Configure Service Settings
+
+| Setting | Value |
+|---------|-------|
+| **Name** | `huellitas-api` |
+| **Region** | Choose closest to your users |
+| **Branch** | `main` or `master` |
+| **Root Directory** | `huellitasBackEnd/Huellitas.API` |
+| **Runtime** | Docker |
+| **Instance Type** | Free (or paid for production) |
+
+#### 3. Environment Variables
+
+Add these environment variables in Render dashboard:
+
+```bash
+# Database Connection
+ConnectionStrings__DefaultConnection=Host=your-db-host;Database=huellitas;Username=your-user;Password=your-password
+
+# JWT Configuration
+Jwt__Key=your-super-secret-key-at-least-32-characters-long
+Jwt__Issuer=HuellitasAPI
+Jwt__Audience=HuellitasFrontend
+
+# ASP.NET Core Settings
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_URLS=http://+:8080
+```
+
+<Warning>
+  Never commit sensitive keys to your repository. Always use environment variables for secrets.
+</Warning>
+
+#### 4. Deploy
+
+Render will automatically:
+1. Build the Docker image
+2. Run database migrations (if configured)
+3. Deploy the container
+4. Assign a public URL (e.g., `https://huellitas-api.onrender.com`)
+
+### Database Configuration
+
+The API connects to PostgreSQL using Entity Framework Core:
+
+```csharp
+// From Program.cs:14-52
+builder.Services.AddDbContext<HuellitasContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+```
+
+**Neon Database Setup:**
+
+1. Create a free PostgreSQL database at [Neon.tech](https://neon.tech/)
+2. Copy the connection string
+3. Add to Render environment variables
+4. Format: `Host=ep-xxx.region.aws.neon.tech;Database=huellitas;Username=user;Password=pass;SSL Mode=Require`
+
+### CORS Configuration
+
+Configure CORS to allow frontend requests:
+
+```csharp
+// From Program.cs:54-63
+builder.Services.AddCors(options =>
+{
+   options.AddPolicy("PermitirFrontend",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+```
+
+<Note>
+  For production, replace `AllowAnyOrigin()` with specific frontend URLs:
+  ```csharp
+  policy.WithOrigins("https://yourusername.github.io")
+  ```
+</Note>
+
+### Health Checks
+
+Render automatically monitors your service. The API exposes endpoints:
+
+- `/api/productos` - Products endpoint
+- `/api/auth/login` - Authentication
+- `/swagger` - API documentation (development only)
+
+### Troubleshooting
+
+**Build Failures:**
+- Check Dockerfile path is correct
+- Verify .csproj file exists in root directory
+- Review build logs in Render dashboard
+
+**Runtime Errors:**
+- Verify all environment variables are set
+- Check database connection string format
+- Ensure port 8080 is exposed in Dockerfile
+
+**Database Connection Issues:**
+- Confirm PostgreSQL allows external connections
+- Check SSL mode requirement (Neon requires SSL)
+- Verify credentials are correct
+
+---
+
+## Frontend Deployment to GitHub Pages
+
+### Prerequisites
+
+- GitHub repository with frontend code
+- Node.js 18+ installed locally
+- npm or yarn package manager
+
+### Vite Configuration
+
+Configure the base path for GitHub Pages:
+
+```javascript
+// vite.config.js
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig(({ command }) => {
+  return {
+    plugins: [react()],
+    base: command === "build" ? "/petshopHuellitas/" : "/",
+  };
+});
+```
+
+<Info>
+  The `base` path must match your repository name for GitHub Pages to work correctly.
+</Info>
+
+### Package.json Scripts
+
+The frontend includes deployment scripts:
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}
+```
+
+### Deployment Steps
+
+#### 1. Install Dependencies
+
+```bash
+cd huellitas-frontend
+npm install
+```
+
+#### 2. Build for Production
+
+```bash
+npm run build
+```
+
+This creates an optimized production build in the `dist/` directory.
+
+#### 3. Deploy to GitHub Pages
+
+```bash
+npm run deploy
+```
+
+This command:
+1. Runs `predeploy` script (builds the app)
+2. Publishes `dist` folder to `gh-pages` branch
+3. GitHub Pages automatically serves from that branch
+
+#### 4. Configure GitHub Repository
+
+1. Go to repository **Settings** → **Pages**
+2. Select **Source**: Deploy from branch
+3. Select **Branch**: `gh-pages` / `root`
+4. Save and wait for deployment
+
+Your site will be available at: `https://yourusername.github.io/petshopHuellitas/`
+
+### Environment Configuration
+
+Update API endpoint for production:
+
+```javascript
+// src/config/api.js (create this file)
+const API_BASE_URL = import.meta.env.PROD 
+  ? 'https://huellitas-api.onrender.com/api'
+  : 'http://localhost:5000/api';
+
+export default API_BASE_URL;
+```
+
+Then use in your API calls:
+
+```javascript
+import axios from 'axios';
+import API_BASE_URL from './config/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL
+});
+
+export default api;
+```
+
+### Automatic Deployment with GitHub Actions
+
+Create `.github/workflows/deploy.yml` for automatic deployment:
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: huellitas-frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: huellitas-frontend
+        run: npm ci
+      
+      - name: Build
+        working-directory: huellitas-frontend
+        run: npm run build
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: huellitas-frontend/dist
+```
+
+### Asset Optimization
+
+Vite automatically optimizes assets during build:
+
+- **Code splitting**: Splits JavaScript into chunks
+- **Tree shaking**: Removes unused code
+- **Minification**: Compresses HTML, CSS, JS
+- **Image optimization**: Optimizes images in public folder
+
+### Custom Domain (Optional)
+
+To use a custom domain:
+
+1. Create `public/CNAME` file:
+   ```
+   www.huellitas-petshop.com
+   ```
+
+2. Configure DNS records:
+   ```
+   CNAME www yourusername.github.io
+   A @ 185.199.108.153
+   A @ 185.199.109.153
+   A @ 185.199.110.153
+   A @ 185.199.111.153
+   ```
+
+3. Enable HTTPS in GitHub Pages settings
+
+---
+
+## Production Checklist
+
+### Backend
+
+- [ ] Environment variables configured
+- [ ] Database migrations applied
+- [ ] JWT secret key is secure (32+ characters)
+- [ ] CORS restricted to frontend domain
+- [ ] Swagger disabled in production
+- [ ] Logging configured
+- [ ] Health check endpoint working
+
+### Frontend
+
+- [ ] API endpoint points to production URL
+- [ ] Base path matches repository name
+- [ ] Build succeeds without warnings
+- [ ] Environment variables set
+- [ ] Error boundaries implemented
+- [ ] Loading states for API calls
+- [ ] 404 page configured
+
+### Testing
+
+- [ ] Test all API endpoints from frontend
+- [ ] Verify authentication flow
+- [ ] Check mobile responsiveness
+- [ ] Test on multiple browsers
+- [ ] Verify error handling
+
+---
+
+## Monitoring and Maintenance
+
+### Render Monitoring
+
+- View logs in Render dashboard
+- Set up email alerts for downtime
+- Monitor response times and errors
+- Check database connection pool
+
+### GitHub Pages Analytics
+
+- Enable GitHub Pages insights
+- Use Google Analytics for visitor tracking
+- Monitor Core Web Vitals
+
+### Free Tier Limitations
+
+**Render Free Tier:**
+- Service spins down after 15 minutes of inactivity
+- First request after spin-down takes 30-60 seconds
+- 750 hours/month free (enough for one service)
+
+**GitHub Pages:**
+- 1GB repository size limit
+- 100GB bandwidth/month
+- 10 builds/hour limit
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Pipeline" icon="database" href="/guides/data-pipeline">
+    Learn how to populate your database with products and users
+  </Card>
+  <Card title="Admin Dashboard" icon="gauge" href="/guides/admin-dashboard">
+    Explore admin panel features and analytics
+  </Card>
+</CardGroup>

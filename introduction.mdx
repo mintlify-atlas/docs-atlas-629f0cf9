@@ -1,0 +1,156 @@
+---
+title: Introduction
+description: Learn about Huellitas Pet Shop, a modern full-stack e-commerce application built with React, .NET, and PostgreSQL
+---
+
+# Welcome to Huellitas Pet Shop
+
+Huellitas is a full-featured pet shop e-commerce platform that evolved from a front-end course project into a robust, scalable full-stack application. The project showcases modern web development practices with a Single Page Application (SPA) consuming data from a custom REST API backed by a relational database.
+
+<Card title="Live Demo" icon="globe" href="https://dominguezmicaela.github.io/petshopHuellitas/">
+  Experience the application in action
+</Card>
+
+## What is Huellitas?
+
+Huellitas is an educational project demonstrating professional software architecture and development practices. It features:
+
+<CardGroup cols={2}>
+  <Card title="Dynamic Catalog" icon="store">
+    Real-time product loading from the API with filtering and search capabilities
+  </Card>
+  <Card title="Shopping Cart" icon="cart-shopping">
+    Persistent cart system using LocalStorage with add, remove, and checkout functionality
+  </Card>
+  <Card title="Admin Dashboard" icon="chart-line">
+    Exclusive panel with key metrics, user management, and analytics for 580+ users
+  </Card>
+  <Card title="Responsive Design" icon="mobile">
+    Optimized interface for mobile phones, tablets, and desktop computers
+  </Card>
+</CardGroup>
+
+## Technology Stack
+
+Huellitas is built with modern technologies chosen for scalability and maintainability:
+
+### Frontend
+- **React 18** - Modern UI library with hooks and context
+- **Vite** - Fast build tool and development server
+- **React Router Dom** - Client-side routing for SPA navigation
+- **Axios** - HTTP client for API communication
+- **Tailwind CSS** - Utility-first CSS framework
+- **Framer Motion** - Animation library for smooth interactions
+
+### Backend
+- **.NET 9 / C#** - Modern web API framework
+- **Entity Framework Core** - Code-first ORM for database operations
+- **JWT Authentication** - Secure token-based authentication
+- **Swagger/OpenAPI** - Interactive API documentation
+
+### Database
+- **PostgreSQL** - Robust relational database
+- **Neon** - Cloud database hosting
+- **Normalized schema** - Optimized for data consistency
+
+### Infrastructure
+- **Render** - Backend hosting platform
+- **GitHub Pages** - Frontend static site hosting
+- **Git** - Version control with conventional commits
+
+## Architecture Highlights
+
+The application follows industry-standard patterns and practices:
+
+<AccordionGroup>
+  <Accordion title="Repository Pattern">
+    Abstracts and decouples data access logic from business logic, making the codebase more maintainable and testable.
+    
+    ```csharp
+    public interface IProductoRepositorio
+    {
+        Task<IEnumerable<Producto>> ObtenerTodosAsync();
+        Task<Producto> ObtenerPorIdAsync(int id);
+        Task<Producto> CrearAsync(Producto producto);
+        Task ActualizarAsync(Producto producto);
+        Task<bool> EliminarAsync(int id);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Data Transfer Objects (DTOs)">
+    Ensures secure and efficient data transfer between layers by exposing only necessary information.
+  </Accordion>
+  
+  <Accordion title="Dependency Injection">
+    Improves modularity, testability, and maintainability by injecting dependencies rather than hard-coding them.
+    
+    ```csharp
+    builder.Services.AddScoped<IProductoRepositorio, ProductoRepositorio>();
+    builder.Services.AddScoped<IProductoService, ProductoService>();
+    ```
+  </Accordion>
+  
+  <Accordion title="Layered Architecture">
+    Clean separation of concerns across four distinct projects:
+    - **Huellitas.API** - Controllers and HTTP endpoints
+    - **Huellitas.Service** - Business logic and validation
+    - **Huellitas.Data** - Database context and repositories
+    - **Huellitas.Core** - Domain entities and interfaces
+  </Accordion>
+</AccordionGroup>
+
+## Key Features
+
+### For Customers
+- Browse products with real-time API data
+- Filter by categories and search functionality
+- Add items to cart with quantity management
+- Persistent cart across sessions
+- Responsive design for all devices
+- Contact form for inquiries
+
+### For Administrators
+- Secure JWT-based authentication
+- Dashboard with key business metrics
+- User management for 580+ registered users
+- Product CRUD operations
+- Order tracking and management
+
+## Development Approach
+
+<Note>
+  This project embraces modern development methodologies including AI-assisted development for code optimization, feature branches for version control, and conventional commits for maintainable history.
+</Note>
+
+The project demonstrates:
+- **Code-first database migrations** with Entity Framework Core
+- **RESTful API design** with proper HTTP verbs and status codes
+- **Custom React hooks** for state management and data fetching
+- **Context API** for global state (shopping cart)
+- **Component composition** for reusable UI elements
+
+## Future Roadmap
+
+Huellitas is continuously evolving with planned features:
+
+1. **Smart Data Pipeline** (Completed) - Python scripts for automated product categorization
+2. **Dynamic CRM Dashboard** (In Progress) - Purchase trend visualization and analytics
+3. **ML Recommendation Engine** (Planned) - Product suggestions based on user history
+4. **Predictive Analytics** (Planned) - Advanced dashboards for demand forecasting
+
+## Getting Started
+
+Ready to explore or contribute to Huellitas? Continue to the next section:
+
+<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+  Get the project running locally in minutes
+</Card>
+
+<Warning>
+  This project is developed exclusively for educational purposes. Product images and data are used for technical demonstration only.
+</Warning>
+
+---
+
+**Project Author:** Micaela Belen Dominguez

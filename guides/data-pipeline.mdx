@@ -1,0 +1,573 @@
+---
+title: 'Data Pipeline'
+description: 'Python scripts for loading products and users into the database'
+---
+
+## Overview
+
+Huellitas Pet Shop uses Python Jupyter notebooks to process and load data into the PostgreSQL database. The data pipeline consists of two main scripts:
+
+1. **dataTableProducts.ipynb** - Product data ETL pipeline
+2. **usuario.ipynb** - User generation and loading
+
+These scripts use pandas, SQLAlchemy, and Faker to transform raw data and populate the database.
+
+---
+
+## Product Data Pipeline
+
+### Script Location
+
+```
+huellitasBackEnd/Scripts/dataTableProducts.ipynb
+```
+
+### Overview
+
+This notebook processes the Amazon Pet Supplies dataset and transforms it into clean, structured product data for the Huellitas database.
+
+**Methodology:**
+- **Data cleaning**: Imputation of null price values and removal of duplicates
+- **Feature engineering**: Creation of new categories and recategorization based on title and breadcrumbs
+- **Translation**: Use of Google Translator API
+- **Output**: Generation of INSERT statements for the Product table
+
+### Data Source
+
+The script processes `amazon_pet_supplies_dataset_sample[1].csv` with 343 products.
+
+**Dataset Structure:**
+
+| Column | Description |
+|--------|-------------|
+| `url` | Product URL on Amazon |
+| `asin` | Amazon Standard Identification Number |
+| `title` | Product name |
+| `price` | Product cost (INR currency) |
+| `currency` | Currency type (INR, USD, ARS, EUR) |
+| `brand` | Manufacturer brand |
+| `images` | Product image URLs |
+| `overview` | Feature highlights summary |
+| `about_item` | Additional info and key characteristics |
+| `availability` | Stock quantity available |
+| `description` | Product description |
+| `specifications` | Technical data |
+| `breadcrumbs` | Hierarchical category path |
+| `scraped_at` | Data capture timestamp |
+
+### Dependencies
+
+```python
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+```
+
+### Step-by-Step Process
+
+#### 1. Load Dataset
+
+```python
+dataset = 'amazon_pet_supplies_dataset_sample[1].csv'
+df = pd.read_csv(dataset)
+
+# Check initial structure
+df.info()
+```
+
+**Initial Data Issues:**
+- 343 entries with 15 columns
+- All columns are object type (strings)
+- Numerous null values in price (284/343), availability (252/343)
+- Calculations impossible without type conversion
+
+#### 2. Remove Duplicates
+
+```python
+# Create backup copy
+df_limpio = df.copy()
+
+# Check for duplicates
+print("Cantidad de duplicados:", df_limpio.duplicated().sum())
+# Output: 0
+
+print(f"Tamaño actual del dataset: {df_limpio.shape}")
+# Output: (343, 15)
+```
+
+#### 3. Price Data Cleaning
+
+**Problem:** Prices are stored as strings with currency symbols and commas.
+
+```python
+# Initial state
+print(df_productos['price'].head())
+# 0    4,066.00
+# 1         NaN
+# 2      199.00
+# 3         NaN
+# 4      850.00
+
+# Remove symbols and letters
+df_productos['precio'] = df_productos['price'].astype(str).str.replace(r'[^\d.]', '', regex=True)
+
+# Convert to decimal
+df_productos['precio'] = pd.to_numeric(df_productos['precio'], errors='coerce')
+
+# Verify conversion
+print(df_productos['precio'].describe())
+```
+
+**Price Statistics:**
+
+```
+count      284.000000
+mean      1884.556725
+std       3347.995882
+min        135.000000
+25%        399.000000
+50%        969.000000  # Median
+75%       1843.750000
+max      28638.000000
+```
+
+#### 4. Outlier Detection
+
+The script generates visualizations to identify price outliers:
+
+```python
+plt.figure(figsize=(12, 5))
+
+# Histogram
+plt.subplot(1, 2, 1)
+sns.histplot(df_productos['precio'], kde=True, color='green')
+plt.title('Distribución de Precios')
+
+# Boxplot
+plt.subplot(1, 2, 2)
+sns.boxplot(x=df_productos['precio'], color='green')
+plt.title('Deteccion de outliers')
+plt.tight_layout()
+plt.show()
+```
+
+**Findings:**
+- Right-skewed distribution (positive asymmetry)
+- Multiple significant outliers in upper range
+- Median (969) better represents central tendency than mean (1884)
+
+#### 5. Impute Missing Prices
+
+```python
+import random
+
+def asignarPrecioLogico(fila):
+    """Assign logical prices based on product category"""
+    nombre = str(fila['title']).lower()
+    
+    if any(x in nombre for x in ['cama', 'transportadora', 'casa', 'jaula']):
+        # Beds, carriers, houses, cages
+        return random.randint(40000, 95000)
+    elif any(x in nombre for x in ['comedero', 'alimento', 'shampoo', 'cuidado']):
+        # Feeders, food, shampoo, care products
+        return random.randint(15000, 35000)
+    elif any(x in nombre for x in ['juguete', 'snack', 'correa', 'collar', 'accesorio']):
+        # Toys, snacks, leashes, collars, accessories
+        return random.randint(3500, 12500)
+    else:
+        # Other products
+        return random.randint(5000, 20000)
+
+# Apply to missing prices
+df_productos['precio'] = df_productos.apply(asignarPrecioLogico, axis=1)
+
+# Verify no nulls remain
+df_productos['precio'].isnull().sum()  # Should be 0
+```
+
+<Note>
+  The imputation logic assigns prices based on product type keywords, ensuring realistic pricing aligned with typical pet product costs.
+</Note>
+
+#### 6. Category Mapping
+
+Products are categorized based on breadcrumbs:
+
+```python
+# Example breadcrumbs:
+# "Pet Supplies | Cats | Toys | Feather Toys"
+# "Pet Supplies | Birds | Birdcage Accessories | ..."
+# "Pet Supplies | Dogs | Grooming | Claw Care"
+
+def extract_category(breadcrumbs):
+    parts = breadcrumbs.split('|')
+    if len(parts) >= 2:
+        return parts[1].strip()  # Returns: Cats, Birds, Dogs, etc.
+    return 'General'
+
+df_productos['categoria'] = df_productos['breadcrumbs'].apply(extract_category)
+```
+
+#### 7. Database Loading
+
+Load cleaned data into PostgreSQL:
+
+```python
+from sqlalchemy import create_engine
+
+# Database connection
+DATABASE_URL = "postgresql://user:password@host:5432/huellitas"
+engine = create_engine(DATABASE_URL)
+
+nombre_tabla = 'Producto'
+
+try:
+    df_productos.to_sql(
+        nombre_tabla, 
+        engine, 
+        if_exists='append',  # Append to existing table
+        index=False
+    )
+    print(f"✅ Successfully loaded {len(df_productos)} products")
+except Exception as e:
+    print(f"❌ Error loading data: {e}")
+```
+
+### Database Schema Mapping
+
+| CSV Column | Database Column | Transformation |
+|------------|----------------|----------------|
+| `title` | `nombre` | Direct mapping |
+| `precio` | `precio` | Cleaned, imputed, converted |
+| `images` | `img` | Extract first image URL |
+| `availability` | `stockActual` | Parse quantity from text |
+| `breadcrumbs` | `categoria` | Extract category |
+| `brand` | `marca` | Clean "Brand: " prefix |
+| `description` | `descripcion` | Translate to Spanish |
+
+---
+
+## User Generation Pipeline
+
+### Script Location
+
+```
+huellitasBackEnd/Scripts/usuario.ipynb
+```
+
+### Overview
+
+Generates realistic user data for testing and development using the Faker library.
+
+### Dependencies
+
+```python
+import pandas as pd
+import random
+from faker import Faker
+from sqlalchemy import create_engine
+
+# Configure Faker for Argentina locale
+fake = Faker('es_AR')
+```
+
+### Database Connection
+
+```python
+# Replace with your connection string
+DATABASE_URL = "postgresql://user:password@host:5432/huellitas"
+engine = create_engine(DATABASE_URL)
+```
+
+<Warning>
+  Never hardcode credentials in notebooks. Use environment variables:
+  ```python
+  import os
+  DATABASE_URL = os.getenv('DATABASE_URL')
+  ```
+</Warning>
+
+### User Segmentation
+
+Users are categorized into pet preference segments:
+
+```python
+segmentos = ['CatLover', 'DogLover', 'Aves', 'Exóticos']
+```
+
+This enables:
+- Targeted product recommendations
+- Personalized marketing campaigns
+- Customer behavior analysis
+
+### User Generation Function
+
+```python
+def generar_dataset_usuarios(n=15):
+    """Generate n realistic user records"""
+    lista_usuarios = []
+    
+    for _ in range(n):
+        segmento_elegido = random.choice(segmentos)
+        
+        lista_usuarios.append({
+            "nombre": fake.first_name(),
+            "apellido": fake.last_name(),
+            "email": fake.email(),
+            "passwordHash": "argon2_simulado_5544",  # Placeholder
+            "direccion": fake.address().replace('\n', ', '),
+            "segmentoCliente": segmento_elegido,
+            "idRol": 2  # Regular user role
+        })
+    
+    return pd.DataFrame(lista_usuarios)
+```
+
+**Field Explanations:**
+
+- `nombre` / `apellido`: Realistic Argentine names
+- `email`: Valid email format
+- `passwordHash`: Placeholder for Argon2 hash (hash real passwords in production)
+- `direccion`: Full Argentine address
+- `segmentoCliente`: Random pet preference segment
+- `idRol`: `2` = User, `1` = Admin
+
+### Generate Users
+
+```python
+# Generate 500 users
+df_usuarios = generar_dataset_usuarios(500)
+
+# Preview
+print("📊 Previsualización de los usuarios a cargar:")
+print(df_usuarios[['nombre', 'apellido', 'segmentoCliente']].head())
+```
+
+**Sample Output:**
+
+```
+         nombre apellido segmentoCliente
+0          Mora  Cardozo        CatLover
+1 Thiago Daniel  Sanchez        Exóticos
+2       Emanuel  Sanchez            Aves
+3       Santino    Perez        DogLover
+4          León  Olivera        DogLover
+```
+
+### Load to Database
+
+```python
+nombre_tabla = 'Usuario'
+
+try:
+    df_usuarios.to_sql(
+        nombre_tabla, 
+        engine, 
+        if_exists='append',
+        index=False
+    )
+    print(f"✅ Successfully loaded {len(df_usuarios)} users")
+except Exception as e:
+    print(f"❌ Error loading users: {e}")
+```
+
+---
+
+## Running the Notebooks
+
+### Local Execution
+
+#### 1. Install Dependencies
+
+```bash
+pip install pandas faker sqlalchemy psycopg2-binary seaborn matplotlib
+```
+
+#### 2. Launch Jupyter
+
+```bash
+cd huellitasBackEnd/Scripts
+jupyter notebook
+```
+
+#### 3. Configure Database Connection
+
+Update the `DATABASE_URL` in both notebooks:
+
+```python
+import os
+
+# Option 1: Environment variable
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+# Option 2: Direct connection (development only)
+DATABASE_URL = "postgresql://user:pass@localhost:5432/huellitas"
+```
+
+#### 4. Run All Cells
+
+- Click **Cell** → **Run All**
+- Monitor progress in output cells
+- Check for errors in database connection or data loading
+
+### Google Colab Execution
+
+Both notebooks were originally developed in Google Colab.
+
+#### 1. Upload to Colab
+
+1. Open [Google Colab](https://colab.research.google.com/)
+2. Click **File** → **Upload notebook**
+3. Select `.ipynb` file
+
+#### 2. Install Faker (Products script only)
+
+```python
+!pip install faker
+```
+
+#### 3. Upload CSV Dataset
+
+For products script:
+
+```python
+from google.colab import files
+uploaded = files.upload()
+# Select: amazon_pet_supplies_dataset_sample[1].csv
+```
+
+#### 4. Configure Database Connection
+
+```python
+from google.colab import userdata
+
+# Store secret in Colab Secrets
+DATABASE_URL = userdata.get('DATABASE_URL')
+engine = create_engine(DATABASE_URL)
+```
+
+---
+
+## Database Schema
+
+### Producto Table
+
+```sql
+CREATE TABLE "Producto" (
+    "idProducto" SERIAL PRIMARY KEY,
+    "nombre" VARCHAR(255) NOT NULL,
+    "precio" DECIMAL(10,2) NOT NULL,
+    "img" TEXT,
+    "stockActual" INTEGER DEFAULT 0,
+    "categoria" VARCHAR(100),
+    "marca" VARCHAR(100),
+    "descripcion" TEXT
+);
+```
+
+### Usuario Table
+
+```sql
+CREATE TABLE "Usuario" (
+    "idUsuario" SERIAL PRIMARY KEY,
+    "nombre" VARCHAR(100) NOT NULL,
+    "apellido" VARCHAR(100) NOT NULL,
+    "email" VARCHAR(255) UNIQUE NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "direccion" TEXT,
+    "segmentoCliente" VARCHAR(50),
+    "idRol" INTEGER NOT NULL,
+    FOREIGN KEY ("idRol") REFERENCES "Rol"("idRol")
+);
+```
+
+---
+
+## Best Practices
+
+### Data Security
+
+<Warning>
+  - Never commit database credentials to version control
+  - Use `.env` files or environment variables
+  - Hash passwords with Argon2 or bcrypt before insertion
+  - Sanitize user input to prevent SQL injection
+</Warning>
+
+### Data Quality
+
+- **Validate data** before insertion
+- **Handle duplicates** with `if_exists='append'` carefully
+- **Log errors** for debugging
+- **Test with small batches** first
+
+### Performance Optimization
+
+```python
+# Batch insert for better performance
+chunk_size = 100
+for i in range(0, len(df), chunk_size):
+    chunk = df[i:i+chunk_size]
+    chunk.to_sql('Producto', engine, if_exists='append', index=False)
+    print(f"Loaded {i+len(chunk)}/{len(df)} records")
+```
+
+### Error Handling
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    df.to_sql('Producto', engine, if_exists='append', index=False)
+    logger.info(f"Successfully loaded {len(df)} products")
+except Exception as e:
+    logger.error(f"Database error: {e}")
+    # Optionally save to CSV for manual review
+    df.to_csv('failed_products.csv', index=False)
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**"No module named 'faker'"**
+```bash
+pip install faker
+```
+
+**"relation 'Producto' does not exist"**
+- Ensure database migrations have been run
+- Check table name casing (PostgreSQL is case-sensitive)
+
+**"UNIQUE constraint violation"**
+- Use `if_exists='replace'` to overwrite table
+- Or filter out duplicates before insertion
+
+**Price conversion errors**
+```python
+# Add error handling
+df['precio'] = pd.to_numeric(df['precio'], errors='coerce').fillna(0)
+```
+
+**Connection timeout**
+- Check database is running and accessible
+- Verify firewall allows connections
+- Confirm connection string format
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Admin Dashboard" icon="gauge" href="/guides/admin-dashboard">
+    View and analyze the loaded data in the admin panel
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/products/list">
+    Learn how to access this data via the API
+  </Card>
+</CardGroup>

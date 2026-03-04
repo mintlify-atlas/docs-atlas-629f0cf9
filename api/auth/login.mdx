@@ -1,0 +1,83 @@
+---
+title: 'Login'
+api: 'POST /api/Auth/login'
+description: 'Authenticate a user and receive a JWT token'
+---
+
+## Authentication
+
+This endpoint does not require authentication. Use the returned token for subsequent authenticated requests.
+
+## Request Body
+
+<ParamField body="Email" type="string" required>
+  User's email address
+</ParamField>
+
+<ParamField body="Password" type="string" required>
+  User's password (sent as plain text, ensure HTTPS is used)
+</ParamField>
+
+### Request Example
+
+```json
+{
+  "Email": "usuario@huellitas.com",
+  "Password": "miPassword123"
+}
+```
+
+## Response
+
+<ResponseField name="token" type="string">
+  JWT token for authentication. Include this in the Authorization header as `Bearer {token}` for protected endpoints.
+</ResponseField>
+
+### Success Response (200 OK)
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### Error Response (401 Unauthorized)
+
+```json
+{
+  "message": "E mail o contrasena incorrectos"
+}
+```
+
+## Code Example
+
+```bash
+curl -X POST https://api.huellitas.com/api/Auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Email": "usuario@huellitas.com",
+    "Password": "miPassword123"
+  }'
+```
+
+```javascript
+const response = await fetch('https://api.huellitas.com/api/Auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    Email: 'usuario@huellitas.com',
+    Password: 'miPassword123'
+  })
+});
+
+const data = await response.json();
+console.log(data.token);
+```
+
+## Source Reference
+
+Controller: `Huellitas.API/Controllers/AuthController.cs:18`
+
+DTO: `Huellitas.Core/DTO/Auth/LoginDto.cs`

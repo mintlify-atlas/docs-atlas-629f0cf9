@@ -1,0 +1,387 @@
+---
+title: 'Orders Endpoints'
+description: 'Complete reference for order management endpoints'
+---
+
+## Overview
+
+The Orders API allows you to create, retrieve, update, and delete customer orders. Each order contains customer information, order details, and a collection of order line items (Detalles).
+
+## Authentication
+
+All order endpoints require authentication. Include the JWT token in the Authorization header:
+
+```
+Authorization: Bearer {token}
+```
+
+## Entity Structure
+
+The `Pedido` (Order) entity has the following structure:
+
+```csharp
+public class Pedido
+{
+    public int idPedido { get; set; }
+    public DateTime fecha { get; set; } = DateTime.Now;
+    public decimal total { get; set; }
+    public string metodoPago { get; set; } // "tarjeta" o "efectivo"
+    public int idUsuario { get; set; }
+    public virtual Usuario Usuario { get; set; }
+    public virtual ICollection<Detalle> detalles { get; set; }
+}
+```
+
+### Order Details (Detalles)
+
+Each order contains a collection of line items:
+
+```csharp
+public class Detalle
+{
+    public int idDetalle { get; set; }
+    public int cantidad { get; set; }
+    public decimal precioUnitario { get; set; }
+    public int idProducto { get; set; }
+    public virtual Producto producto { get; set; }
+}
+```
+
+---
+
+## GET /api/Pedidos
+
+Retrieve all orders in the system.
+
+### Response Fields
+
+<ResponseField name="idPedido" type="integer">
+  Unique order identifier
+</ResponseField>
+
+<ResponseField name="fecha" type="datetime">
+  Order creation date and time
+</ResponseField>
+
+<ResponseField name="total" type="decimal">
+  Total order amount (calculated from line items)
+</ResponseField>
+
+<ResponseField name="metodoPago" type="string">
+  Payment method: "tarjeta" (card) or "efectivo" (cash)
+</ResponseField>
+
+<ResponseField name="idUsuario" type="integer">
+  Customer user ID who placed the order
+</ResponseField>
+
+<ResponseField name="Usuario" type="object">
+  Customer information including name, email, and address
+</ResponseField>
+
+<ResponseField name="detalles" type="array">
+  Array of order line items (products, quantities, prices)
+</ResponseField>
+
+### Example Response
+
+```json
+[
+  {
+    "idPedido": 1,
+    "fecha": "2026-03-01T10:30:00",
+    "total": 125.50,
+    "metodoPago": "tarjeta",
+    "idUsuario": 5,
+    "Usuario": {
+      "idUsuario": 5,
+      "nombre": "María",
+      "apellido": "García",
+      "email": "maria@example.com",
+      "direccion": "Calle Principal 123"
+    },
+    "detalles": [
+      {
+        "idDetalle": 1,
+        "cantidad": 2,
+        "precioUnitario": 45.99,
+        "idProducto": 1,
+        "producto": {
+          "idProducto": 1,
+          "nombre": "Alimento para Perros Premium"
+        }
+      },
+      {
+        "idDetalle": 2,
+        "cantidad": 1,
+        "precioUnitario": 33.52,
+        "idProducto": 8,
+        "producto": {
+          "idProducto": 8,
+          "nombre": "Cama para Mascotas"
+        }
+      }
+    ]
+  }
+]
+```
+
+### Code Example
+
+```bash
+curl -X GET https://api.huellitas.com/api/Pedidos \
+  -H "Authorization: Bearer {your_token_here}"
+```
+
+**Source**: `Huellitas.API/Controllers/PedidosController.cs:22`
+
+---
+
+## GET /api/Pedidos/{id}
+
+Retrieve a specific order by ID.
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique order identifier
+</ParamField>
+
+### Success Response (200 OK)
+
+Returns a single order object with the same structure as shown above.
+
+### Error Response (404 Not Found)
+
+```json
+"Pedido no encontrado"
+```
+
+### Code Example
+
+```bash
+curl -X GET https://api.huellitas.com/api/Pedidos/1 \
+  -H "Authorization: Bearer {your_token_here}"
+```
+
+**Source**: `Huellitas.API/Controllers/PedidosController.cs:28`
+
+---
+
+## POST /api/Pedidos
+
+Create a new order.
+
+### Request Body
+
+<ParamField body="fecha" type="datetime">
+  Order date (defaults to current date/time if not provided)
+</ParamField>
+
+<ParamField body="total" type="decimal" required>
+  Total order amount (decimal with 2 precision)
+</ParamField>
+
+<ParamField body="metodoPago" type="string" required>
+  Payment method: "tarjeta" or "efectivo" (max 50 characters)
+</ParamField>
+
+<ParamField body="idUsuario" type="integer" required>
+  Customer user ID (must be a valid existing user)
+</ParamField>
+
+<ParamField body="detalles" type="array" required>
+  Array of order line items
+  
+  <ParamField body="cantidad" type="integer" required>
+    Quantity of the product
+  </ParamField>
+  
+  <ParamField body="precioUnitario" type="decimal" required>
+    Unit price at the time of order
+  </ParamField>
+  
+  <ParamField body="idProducto" type="integer" required>
+    Product ID
+  </ParamField>
+</ParamField>
+
+### Request Example
+
+```json
+{
+  "fecha": "2026-03-04T14:30:00",
+  "total": 91.98,
+  "metodoPago": "tarjeta",
+  "idUsuario": 5,
+  "detalles": [
+    {
+      "cantidad": 2,
+      "precioUnitario": 45.99,
+      "idProducto": 1
+    }
+  ]
+}
+```
+
+### Success Response (201 Created)
+
+Returns the created order object with the assigned `idPedido` and a `Location` header pointing to the new resource.
+
+### Error Response (400 Bad Request)
+
+```json
+"Error message describing what went wrong"
+```
+
+### Code Example
+
+```bash
+curl -X POST https://api.huellitas.com/api/Pedidos \
+  -H "Authorization: Bearer {your_token_here}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "total": 91.98,
+    "metodoPago": "tarjeta",
+    "idUsuario": 5,
+    "detalles": [
+      {
+        "cantidad": 2,
+        "precioUnitario": 45.99,
+        "idProducto": 1
+      }
+    ]
+  }'
+```
+
+```javascript
+const nuevoPedido = {
+  total: 91.98,
+  metodoPago: "tarjeta",
+  idUsuario: 5,
+  detalles: [
+    {
+      cantidad: 2,
+      precioUnitario: 45.99,
+      idProducto: 1
+    }
+  ]
+};
+
+const response = await fetch('https://api.huellitas.com/api/Pedidos', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(nuevoPedido)
+});
+
+if (response.status === 201) {
+  const pedido = await response.json();
+  console.log('Pedido creado con ID:', pedido.idPedido);
+}
+```
+
+**Source**: `Huellitas.API/Controllers/PedidosController.cs:36`
+
+---
+
+## PUT /api/Pedidos/{id}
+
+Update an existing order.
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique order identifier to update
+</ParamField>
+
+### Request Body
+
+Provide the complete order object with updated values. The structure is the same as the POST request.
+
+### Success Response (204 No Content)
+
+Returns no content. The 204 status code indicates the update was successful.
+
+### Error Response (400 Bad Request)
+
+```json
+"Error message describing what went wrong"
+```
+
+### Code Example
+
+```bash
+curl -X PUT https://api.huellitas.com/api/Pedidos/1 \
+  -H "Authorization: Bearer {your_token_here}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idPedido": 1,
+    "fecha": "2026-03-01T10:30:00",
+    "total": 150.00,
+    "metodoPago": "efectivo",
+    "idUsuario": 5,
+    "detalles": [...]
+  }'
+```
+
+**Source**: `Huellitas.API/Controllers/PedidosController.cs:51`
+
+---
+
+## DELETE /api/Pedidos/{id}
+
+Delete an order from the system.
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique order identifier to delete
+</ParamField>
+
+### Success Response (200 OK)
+
+```json
+"Pedido eliminado correctamente."
+```
+
+### Error Response (404 Not Found)
+
+```json
+"No se pudo eliminar: El pedido no existe."
+```
+
+### Code Example
+
+```bash
+curl -X DELETE https://api.huellitas.com/api/Pedidos/1 \
+  -H "Authorization: Bearer {your_token_here}"
+```
+
+**Source**: `Huellitas.API/Controllers/PedidosController.cs:65`
+
+---
+
+## Important Notes
+
+<Warning>
+- Deleting an order will also delete all associated order details (Detalles) due to cascade delete
+- Ensure stock levels are adjusted appropriately when orders are created or deleted
+- The total should match the sum of (cantidad × precioUnitario) for all line items
+</Warning>
+
+### Best Practices
+
+1. **Calculate Total**: Always calculate the order total on the server side to prevent manipulation
+2. **Stock Validation**: Verify product availability before creating orders
+3. **Price Consistency**: Store the unit price in `Detalle` to maintain historical accuracy
+4. **Order Status**: Consider adding an order status field for order lifecycle management
+5. **Soft Delete**: Consider soft-delete for orders to maintain historical data
+
+## Related Entities
+
+- **Usuario** (`Huellitas.Core/Entities/Usuario.cs`): Customer who placed the order
+- **Producto** (`Huellitas.Core/Entities/Producto.cs`): Products included in order details
+- **Detalle** (`Huellitas.Core/Entities/Detalle.cs`): Individual line items in the order

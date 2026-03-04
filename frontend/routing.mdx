@@ -1,0 +1,396 @@
+---
+title: React Router Configuration
+description: Routing setup and navigation structure in Huellitas Pet Shop
+---
+
+## Router Setup
+
+The application uses React Router v6 with `HashRouter` for GitHub Pages compatibility.
+
+### Main App Component
+
+```jsx src/App.jsx
+import { Routes, Route, useLocation } from "react-router-dom";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Inicio from "./pages/Home/Inicio";
+import Contacto from "./pages/Contact/Contacto";
+import Login from "./pages/Login/Login";
+import AdminPanel from "./pages/Admin/AdminPanel";
+import Carrito from "./pages/Cart/Carrito";
+
+function App() {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin");
+
+  return (
+    <div style={{ 
+      display: "flex", 
+      flexDirection: "column", 
+      minHeight: "100vh", 
+      background: "#f5ede0" 
+    }}>
+      {!isAdmin && <Header />}
+
+      <main style={{ flex: 1, width: "100%" }}>
+        <Routes>
+          <Route path="/" element={<Inicio />} />
+          <Route path="/contacto" element={<Contacto />} />
+          <Route path="/carrito" element={<Carrito />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<AdminPanel />} />
+        </Routes>
+      </main>
+
+      {!isAdmin && <Footer />}
+    </div>
+  );
+}
+
+export default App;
+```
+
+<Accordion title="File Location">
+  `src/App.jsx`
+</Accordion>
+
+## Route Configuration
+
+### Available Routes
+
+<ResponseField name="/" type="GET">
+  **Home Page** - Product catalog with filters and search
+  
+  - Component: `Inicio`
+  - File: `src/pages/Home/Inicio.jsx`
+  - Features: Product grid, search, filters, hero section
+</ResponseField>
+
+<ResponseField name="/contacto" type="GET">
+  **Contact Page** - Contact form and business information
+  
+  - Component: `Contacto`
+  - File: `src/pages/Contact/Contacto.jsx`
+  - Features: Contact form, location info
+</ResponseField>
+
+<ResponseField name="/carrito" type="GET">
+  **Shopping Cart** - View and manage cart items
+  
+  - Component: `Carrito`
+  - File: `src/pages/Cart/Carrito.jsx`
+  - Features: Item list, quantity controls, order summary
+</ResponseField>
+
+<ResponseField name="/login" type="GET">
+  **Authentication** - Login and registration
+  
+  - Component: `Login`
+  - File: `src/pages/Login/Login.jsx`
+  - Features: Login form, register form, decorative panel
+</ResponseField>
+
+<ResponseField name="/admin" type="GET">
+  **Admin Panel** - Product management interface
+  
+  - Component: `AdminPanel`
+  - File: `src/pages/Admin/AdminPanel.jsx`
+  - Features: CRUD operations, no header/footer
+</ResponseField>
+
+## Router Provider
+
+The router is initialized in the application entry point:
+
+```jsx src/main.jsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { HashRouter } from "react-router-dom";
+import App from "./App";
+import { CarritoProvider } from "./context/CarritoContext";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <HashRouter>
+      <CarritoProvider>
+        <App />
+      </CarritoProvider>
+    </HashRouter>
+  </React.StrictMode>
+);
+```
+
+<Warning>
+  The application uses `HashRouter` instead of `BrowserRouter` to support deployment on GitHub Pages without server-side configuration.
+</Warning>
+
+## Navigation Components
+
+### Header Navigation
+
+The `Header` component uses React Router's `Link` component for client-side navigation:
+
+```jsx src/components/Header.jsx
+import { Link } from "react-router-dom";
+
+const NavBtn = ({ to, icon: Icon, label, accent }) => (
+  <Link to={to} style={{ textDecoration: "none" }}>
+    <div style={{
+      display: "flex", 
+      alignItems: "center", 
+      gap: "8px",
+      padding: "10px 18px", 
+      borderRadius: "12px",
+      fontWeight: 600,
+      color: accent ? "#fff" : "#3a5244",
+      background: accent 
+        ? "linear-gradient(135deg, #3d6b4f, #2d5140)" 
+        : "transparent",
+      cursor: "pointer",
+    }}>
+      <Icon />
+      {label}
+    </div>
+  </Link>
+);
+
+// Usage in Header
+<nav>
+  <NavBtn to="/" icon={IcoHome} label="Inicio" />
+  <NavBtn to="/contacto" icon={IcoMail} label="Contacto" />
+  <NavBtn to="/carrito" icon={IcoCart} label="Carrito" />
+  <NavBtn to="/login" icon={IcoUser} label="Iniciar Sesión" accent />
+</nav>
+```
+
+### Navigation Items
+
+<CardGroup cols={2}>
+  <Card title="Inicio" icon="house" iconType="duotone">
+    Home page with product catalog
+  </Card>
+  <Card title="Contacto" icon="envelope" iconType="duotone">
+    Contact form and information
+  </Card>
+  <Card title="Carrito" icon="cart-shopping" iconType="duotone">
+    Shopping cart with checkout
+  </Card>
+  <Card title="Iniciar Sesión" icon="user" iconType="duotone">
+    Login and registration (accent style)
+  </Card>
+</CardGroup>
+
+## Conditional Layout Rendering
+
+The application conditionally renders the Header and Footer based on the current route:
+
+```jsx
+const location = useLocation();
+const isAdmin = location.pathname.startsWith("/admin");
+
+return (
+  <div>
+    {!isAdmin && <Header />}
+    
+    <main>
+      <Routes>
+        {/* routes */}
+      </Routes>
+    </main>
+    
+    {!isAdmin && <Footer />}
+  </div>
+);
+```
+
+<Info>
+  The Admin Panel (`/admin`) is rendered without the standard Header and Footer to provide a focused management interface.
+</Info>
+
+## Route Hooks
+
+### useLocation
+
+Track the current route location:
+
+```jsx
+import { useLocation } from "react-router-dom";
+
+function Component() {
+  const location = useLocation();
+  console.log(location.pathname); // "/carrito"
+  console.log(location.hash);     // "#section"
+  console.log(location.search);   // "?query=value"
+}
+```
+
+### useNavigate
+
+Programmatic navigation (not currently used in the app, but available):
+
+```jsx
+import { useNavigate } from "react-router-dom";
+
+function Component() {
+  const navigate = useNavigate();
+  
+  const goToCart = () => {
+    navigate('/carrito');
+  };
+  
+  const goBack = () => {
+    navigate(-1);
+  };
+}
+```
+
+## URL Structure
+
+### Development URLs
+
+```
+http://localhost:5173/
+http://localhost:5173/#/contacto
+http://localhost:5173/#/carrito
+http://localhost:5173/#/login
+http://localhost:5173/#/admin
+```
+
+### Production URLs (GitHub Pages)
+
+```
+https://username.github.io/petshopHuellitas/
+https://username.github.io/petshopHuellitas/#/contacto
+https://username.github.io/petshopHuellitas/#/carrito
+https://username.github.io/petshopHuellitas/#/login
+https://username.github.io/petshopHuellitas/#/admin
+```
+
+<Note>
+  Notice the `#` in the URLs - this is a characteristic of `HashRouter` and allows the app to work without server-side routing configuration.
+</Note>
+
+## Page Components
+
+### Home Page (Inicio)
+
+Location: `src/pages/Home/Inicio.jsx`
+
+Features:
+- Hero section with search
+- Product grid
+- Filter sidebar
+- Sorting options
+
+### Cart Page (Carrito)
+
+Location: `src/pages/Cart/Carrito.jsx`
+
+Features:
+- Cart items list
+- Quantity controls
+- Order summary
+- Empty cart state
+
+### Contact Page (Contacto)
+
+Location: `src/pages/Contact/Contacto.jsx`
+
+Features:
+- Contact form
+- Business information
+- Location details
+
+### Login Page
+
+Location: `src/pages/Login/Login.jsx`
+
+Features:
+- Login form
+- Registration form
+- Tab switching
+
+### Admin Panel
+
+Location: `src/pages/Admin/AdminPanel.jsx`
+
+Features:
+- Product CRUD operations
+- No header/footer
+- Admin-specific layout
+
+## Router Configuration
+
+### Why HashRouter?
+
+<AccordionGroup>
+  <Accordion title="GitHub Pages Compatibility">
+    GitHub Pages serves static files and doesn't support server-side routing. `HashRouter` uses URL hashes to simulate routing without requiring server configuration.
+  </Accordion>
+  
+  <Accordion title="No Server Configuration Required">
+    Unlike `BrowserRouter`, `HashRouter` doesn't require server rewrites or redirects to handle deep links.
+  </Accordion>
+  
+  <Accordion title="Instant Deployment">
+    Deploy directly to GitHub Pages without additional configuration files or build steps.
+  </Accordion>
+</AccordionGroup>
+
+### Alternative: BrowserRouter
+
+If deploying to a server with routing support:
+
+```jsx
+import { BrowserRouter } from "react-router-dom";
+
+// Replace HashRouter with BrowserRouter
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <CarritoProvider>
+        <App />
+      </CarritoProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);
+```
+
+<Warning>
+  When using `BrowserRouter`, you'll need to configure your server to redirect all requests to `index.html`.
+</Warning>
+
+## Navigation Best Practices
+
+<Steps>
+  <Step title="Use Link for navigation">
+    Always use React Router's `Link` component instead of `<a>` tags for internal navigation to prevent full page reloads.
+  </Step>
+  
+  <Step title="Avoid hardcoded paths">
+    Consider using route constants for maintainability:
+    ```jsx
+    export const ROUTES = {
+      HOME: '/',
+      CART: '/carrito',
+      CONTACT: '/contacto',
+    };
+    ```
+  </Step>
+  
+  <Step title="Handle active states">
+    Use `useLocation` to highlight the current page in navigation.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Components" icon="puzzle-piece" href="/frontend/components">
+    Learn about page components
+  </Card>
+  <Card title="Cart System" icon="cart-shopping" href="/frontend/cart-system">
+    Explore the cart implementation
+  </Card>
+</CardGroup>

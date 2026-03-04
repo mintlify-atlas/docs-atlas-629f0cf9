@@ -1,0 +1,438 @@
+---
+title: Component Structure
+description: Component architecture and examples from Huellitas Pet Shop
+---
+
+## Component Architecture
+
+The application follows a modular component structure with clear separation of concerns:
+
+- **Layout Components**: Header, Footer
+- **Page Components**: Full page views
+- **Feature Components**: Domain-specific components (Carrito, Producto, Contacto)
+- **Shared Components**: Reusable UI elements
+
+## Layout Components
+
+### Header Component
+
+The main navigation header with sticky positioning and gradient accent.
+
+```jsx src/components/Header.jsx
+import { Link } from "react-router-dom";
+import { Logo, IcoHome, IcoMail, IcoCart, IcoUser } from "./icono";
+
+const NavBtn = ({ to, icon: Icon, label, accent }) => (
+  <Link to={to} style={{ textDecoration: "none" }}>
+    <div
+      style={{
+        display: "flex", alignItems: "center", gap: "8px",
+        padding: "10px 18px", borderRadius: "12px",
+        fontWeight: 600, fontSize: "13px",
+        color: accent ? "#fff" : "#3a5244",
+        background: accent ? "linear-gradient(135deg, #3d6b4f, #2d5140)" : "transparent",
+        cursor: "pointer",
+        transition: "all 0.2s ease",
+        boxShadow: accent ? "0 4px 14px rgba(61,107,79,0.28)" : "none",
+      }}
+    >
+      <Icon />
+      {label}
+    </div>
+  </Link>
+);
+
+export const Header = () => (
+  <header style={{
+    position: "sticky", top: 0, zIndex: 1000,
+    height: "72px", width: "100%",
+    background: "rgba(245,237,224,0.92)",
+    backdropFilter: "blur(20px)",
+    borderBottom: "1px solid rgba(85,124,85,0.1)",
+    display: "flex", alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0 5%",
+  }}>
+    <Link to="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
+      <Logo />
+      <span style={{ fontWeight: 800, fontSize: "1.8rem", color: "#2d5140" }}>
+        Huellitas
+      </span>
+    </Link>
+
+    <nav style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <NavBtn to="/" icon={IcoHome} label="Inicio" />
+      <NavBtn to="/contacto" icon={IcoMail} label="Contacto" />
+      <NavBtn to="/carrito" icon={IcoCart} label="Carrito" />
+      <NavBtn to="/login" icon={IcoUser} label="Iniciar Sesión" accent />
+    </nav>
+  </header>
+);
+```
+
+<Accordion title="File Location">
+  `src/components/Header.jsx`
+</Accordion>
+
+#### Features
+
+<CardGroup cols={2}>
+  <Card title="Sticky Navigation" icon="thumbtack">
+    Header stays at the top during scroll
+  </Card>
+  <Card title="Backdrop Blur" icon="droplet">
+    Glassmorphism effect with blur backdrop
+  </Card>
+  <Card title="Gradient Accent" icon="palette">
+    Top border with brand gradient
+  </Card>
+  <Card title="Hover Effects" icon="hand-pointer">
+    Interactive hover states on nav items
+  </Card>
+</CardGroup>
+
+### Footer Component
+
+Minimal footer with social media links.
+
+```jsx src/components/Footer.jsx
+export const Footer = () => (
+  <footer style={{
+    background: "rgba(245,237,224,0.95)",
+    borderTop: "1px solid rgba(85,124,85,0.12)",
+    padding: "2rem 5%",
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    color: "#3a5244",
+  }}>
+    <p style={{ fontWeight: 700, fontSize: "1.4rem", opacity: 0.7 }}>
+      Sitio realizado por Micaela
+    </p>
+    <nav style={{ display: "flex", gap: "1rem" }}>
+      {["Instagram", "Facebook", "WhatsApp"].map(red => (
+        <span key={red} style={{
+          fontWeight: 600, fontSize: "1.4rem",
+          padding: "7px 14px", borderRadius: "10px",
+          background: "rgba(85,124,85,0.07)",
+          cursor: "pointer",
+        }}>
+          {red}
+        </span>
+      ))}
+    </nav>
+  </footer>
+);
+```
+
+## Product Components
+
+### ProductCard Component
+
+Advanced product card with modal expansion and cart integration.
+
+```jsx src/components/Producto/ProductCard.jsx
+import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import useCarrito from "../../hooks/useCarrito";
+
+const ProductCard = ({ producto }) => {
+  const { agregarAlCarrito } = useCarrito();
+  const [expanded, setExpanded] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  const handleAdd = (e) => {
+    e.stopPropagation();
+    agregarAlCarrito({
+      id: producto.idProducto,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      img: producto.img,
+      talle: producto.talle ?? null,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
+
+  return (
+    <>
+      {/* Modal expandido */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={() => setExpanded(false)}
+          >
+            {/* Modal content with product details */}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Card normal */}
+      <motion.div
+        whileHover={{ y: -6 }}
+        onClick={() => setExpanded(true)}
+        className="group relative bg-white rounded-2xl overflow-hidden cursor-pointer"
+      >
+        <div className="w-full h-[200px] overflow-hidden">
+          {producto.img ? (
+            <img
+              src={producto.img}
+              alt={producto.nombre}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span style={{ fontSize: "3.5rem" }}>🐾</span>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4">
+          <h3 className="font-bold text-sm" style={{ color: "#2d5140" }}>
+            {producto.nombre}
+          </h3>
+          <span className="font-extrabold text-sm" style={{ color: "#2d7a3c" }}>
+            ${producto.precio?.toLocaleString("es-AR")}
+          </span>
+          
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleAdd}
+            className="w-full py-2.5 rounded-xl text-sm font-bold"
+          >
+            {added ? "✓ Agregado" : "+ Agregar al carrito"}
+          </motion.button>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+```
+
+<Accordion title="File Location">
+  `src/components/Producto/ProductCard.jsx`
+</Accordion>
+
+#### Key Features
+
+<Steps>
+  <Step title="Hover Animation">
+    Card lifts up on hover using Framer Motion
+  </Step>
+  <Step title="Modal Expansion">
+    Click to expand product details in a modal overlay
+  </Step>
+  <Step title="Cart Integration">
+    Direct integration with shopping cart context
+  </Step>
+  <Step title="Visual Feedback">
+    Button changes state when product is added
+  </Step>
+</Steps>
+
+<Info>
+  The component uses `AnimatePresence` from Framer Motion to animate the modal entrance and exit smoothly.
+</Info>
+
+## Cart Components
+
+### CarritoItem Component
+
+Individual cart item with quantity controls.
+
+```jsx src/components/Carrito/CarritoItem.jsx
+import { useState } from "react";
+
+const CarritoItem = ({ item, updateCantidad, removeItem }) => {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: "#fff",
+        borderRadius: "20px",
+        border: "1.5px solid #f0e6d8",
+        boxShadow: hovered
+          ? "0 12px 36px rgba(0,0,0,0.1)"
+          : "0 4px 16px rgba(0,0,0,0.05)",
+        padding: "1.2rem",
+        display: "grid",
+        gridTemplateColumns: "110px 1fr auto auto",
+        gap: "1.4rem",
+        alignItems: "center",
+        transition: "all 0.25s ease",
+      }}
+    >
+      {/* Imagen */}
+      <div style={{
+        width: "110px", height: "110px", borderRadius: "14px",
+        background: "linear-gradient(135deg, #faf5ee, #f2e9dc)",
+      }}>
+        {item.img
+          ? <img src={item.img} alt={item.nombre} style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
+          : <span style={{ fontSize: "2.8rem" }}>🐾</span>
+        }
+      </div>
+
+      {/* Info */}
+      <div>
+        <h3 style={{ fontWeight: 800, fontSize: "0.95rem", color: "#2d5140" }}>
+          {item.nombre}
+        </h3>
+        <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "#3d6b4f" }}>
+          ${item.precio.toLocaleString("es-AR")}
+        </p>
+      </div>
+
+      {/* Cantidad */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: "10px",
+        background: "#faf5ee", borderRadius: "12px",
+        padding: "0.4rem 0.8rem",
+      }}>
+        <button onClick={() => updateCantidad(item.id, item.cantidad - 1)}>−</button>
+        <span style={{ fontWeight: 800 }}>{item.cantidad}</span>
+        <button onClick={() => updateCantidad(item.id, item.cantidad + 1)}>+</button>
+      </div>
+
+      {/* Total + eliminar */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+        <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "#2d5140" }}>
+          ${(item.precio * item.cantidad).toLocaleString("es-AR")}
+        </span>
+        <button onClick={() => removeItem(item.id)}>
+          🗑 Eliminar
+        </button>
+      </div>
+    </div>
+  );
+};
+```
+
+<Accordion title="File Location">
+  `src/components/Carrito/CarritoItem.jsx`
+</Accordion>
+
+## Component Props
+
+### ProductCard Props
+
+<ParamField path="producto" type="object" required>
+  Product object from the API
+  
+  <Expandable title="properties">
+    <ResponseField name="idProducto" type="number" required>
+      Unique product identifier
+    </ResponseField>
+    <ResponseField name="nombre" type="string" required>
+      Product name
+    </ResponseField>
+    <ResponseField name="precio" type="number" required>
+      Product price in ARS
+    </ResponseField>
+    <ResponseField name="img" type="string">
+      Product image URL
+    </ResponseField>
+    <ResponseField name="descripcion" type="string">
+      Product description
+    </ResponseField>
+    <ResponseField name="categoria" type="string">
+      Product category
+    </ResponseField>
+    <ResponseField name="talle" type="string">
+      Product size (if applicable)
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+### CarritoItem Props
+
+<ParamField path="item" type="object" required>
+  Cart item object
+</ParamField>
+
+<ParamField path="updateCantidad" type="function" required>
+  Function to update item quantity
+  
+  ```typescript
+  (id: number, cantidad: number) => void
+  ```
+</ParamField>
+
+<ParamField path="removeItem" type="function" required>
+  Function to remove item from cart
+  
+  ```typescript
+  (id: number) => void
+  ```
+</ParamField>
+
+## Styling Approach
+
+The application uses inline styles with a consistent design system:
+
+<CardGroup cols={3}>
+  <Card title="Color Palette" icon="palette">
+    - Primary: `#3d6b4f`
+    - Dark: `#2d5140`
+    - Light: `#f5ede0`
+  </Card>
+  <Card title="Typography" icon="font">
+    - Font: Plus Jakarta Sans
+    - Weights: 400, 600, 700, 800
+  </Card>
+  <Card title="Spacing" icon="ruler">
+    - Consistent rem-based spacing
+    - Responsive padding/margins
+  </Card>
+</CardGroup>
+
+<Note>
+  While Tailwind is installed, most components use inline styles for better component encapsulation.
+</Note>
+
+## Animation Patterns
+
+Framer Motion is used extensively for smooth interactions:
+
+```jsx
+import { motion, AnimatePresence } from "framer-motion";
+
+// Hover animation
+<motion.div whileHover={{ y: -6 }} transition={{ duration: 0.25 }}>
+  {/* content */}
+</motion.div>
+
+// Tap animation
+<motion.button whileTap={{ scale: 0.95 }}>
+  Click me
+</motion.button>
+
+// Enter/exit animation
+<AnimatePresence>
+  {isVisible && (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+    >
+      {/* content */}
+    </motion.div>
+  )}
+</AnimatePresence>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Routing" icon="route" href="/frontend/routing">
+    Learn about page routing
+  </Card>
+  <Card title="Cart System" icon="cart-shopping" href="/frontend/cart-system">
+    Deep dive into cart implementation
+  </Card>
+</CardGroup>

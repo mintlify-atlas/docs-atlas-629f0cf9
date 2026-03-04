@@ -1,0 +1,212 @@
+---
+title: 'Create Product'
+api: 'POST /api/Productos'
+description: 'Create a new product in the catalog'
+---
+
+## Authentication
+
+This endpoint requires authentication. Include the JWT token in the Authorization header.
+
+```
+Authorization: Bearer {token}
+```
+
+<Note>
+This endpoint typically requires admin or manager role permissions.
+</Note>
+
+## Request Body
+
+<ParamField body="nombre" type="string" required>
+  Product name (max 100 characters)
+</ParamField>
+
+<ParamField body="precio" type="decimal" required>
+  Product price (decimal with 2 precision points)
+</ParamField>
+
+<ParamField body="img" type="string">
+  URL or path to the product image
+</ParamField>
+
+<ParamField body="stockActual" type="integer" required>
+  Initial stock quantity
+</ParamField>
+
+<ParamField body="stockMinimo" type="integer" required>
+  Minimum stock threshold before reorder alert
+</ParamField>
+
+<ParamField body="idCategoria" type="integer" required>
+  Foreign key reference to the product category (must exist)
+</ParamField>
+
+<ParamField body="descripcion" type="string">
+  Product description
+</ParamField>
+
+### Request Example
+
+```json
+{
+  "nombre": "Juguete Pelota con Sonido",
+  "precio": 8.99,
+  "img": "/images/productos/pelota-sonido.jpg",
+  "stockActual": 200,
+  "stockMinimo": 30,
+  "idCategoria": 3,
+  "descripcion": "Pelota interactiva con sonido para perros"
+}
+```
+
+## Response
+
+<ResponseField name="idProducto" type="integer">
+  Unique identifier for the newly created product
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Product name
+</ResponseField>
+
+<ResponseField name="precio" type="decimal">
+  Product price
+</ResponseField>
+
+<ResponseField name="img" type="string">
+  Product image URL/path
+</ResponseField>
+
+<ResponseField name="stockActual" type="integer">
+  Current stock quantity
+</ResponseField>
+
+<ResponseField name="stockMinimo" type="integer">
+  Minimum stock threshold
+</ResponseField>
+
+<ResponseField name="idCategoria" type="integer">
+  Category ID
+</ResponseField>
+
+<ResponseField name="descripcion" type="string">
+  Product description
+</ResponseField>
+
+<ResponseField name="Categoria" type="object">
+  Related category information
+</ResponseField>
+
+### Success Response (201 Created)
+
+```json
+{
+  "idProducto": 15,
+  "nombre": "Juguete Pelota con Sonido",
+  "precio": 8.99,
+  "img": "/images/productos/pelota-sonido.jpg",
+  "stockActual": 200,
+  "stockMinimo": 30,
+  "idCategoria": 3,
+  "descripcion": "Pelota interactiva con sonido para perros",
+  "Categoria": {
+    "idCategoria": 3,
+    "nombre": "Juguetes",
+    "descripcion": "Juguetes y entretenimiento"
+  }
+}
+```
+
+The response includes a `Location` header with the URI of the created resource:
+```
+Location: /api/Productos/15
+```
+
+### Error Response (400 Bad Request)
+
+```json
+"Error message describing what went wrong"
+```
+
+Common errors:
+- Missing required fields
+- Invalid category ID
+- Duplicate product name
+- Invalid data types
+
+## Code Example
+
+```bash
+curl -X POST https://api.huellitas.com/api/Productos \
+  -H "Authorization: Bearer {your_token_here}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Juguete Pelota con Sonido",
+    "precio": 8.99,
+    "img": "/images/productos/pelota-sonido.jpg",
+    "stockActual": 200,
+    "stockMinimo": 30,
+    "idCategoria": 3,
+    "descripcion": "Pelota interactiva con sonido para perros"
+  }'
+```
+
+```javascript
+const nuevoProducto = {
+  nombre: "Juguete Pelota con Sonido",
+  precio: 8.99,
+  img: "/images/productos/pelota-sonido.jpg",
+  stockActual: 200,
+  stockMinimo: 30,
+  idCategoria: 3,
+  descripcion: "Pelota interactiva con sonido para perros"
+};
+
+const response = await fetch('https://api.huellitas.com/api/Productos', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(nuevoProducto)
+});
+
+if (response.status === 201) {
+  const producto = await response.json();
+  console.log('Producto creado con ID:', producto.idProducto);
+}
+```
+
+```python
+import requests
+
+nuevo_producto = {
+    "nombre": "Juguete Pelota con Sonido",
+    "precio": 8.99,
+    "img": "/images/productos/pelota-sonido.jpg",
+    "stockActual": 200,
+    "stockMinimo": 30,
+    "idCategoria": 3,
+    "descripcion": "Pelota interactiva con sonido para perros"
+}
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.post('https://api.huellitas.com/api/Productos', 
+                        json=nuevo_producto, 
+                        headers=headers)
+
+if response.status_code == 201:
+    producto = response.json()
+    print(f"Producto creado con ID: {producto['idProducto']}")
+```
+
+## Source Reference
+
+Controller: `Huellitas.API/Controllers/ProductosController.cs:50`
+
+Entity: `Huellitas.Core/Entities/Producto.cs`
