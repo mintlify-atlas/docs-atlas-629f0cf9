@@ -1,0 +1,99 @@
+{
+  "projectType": "saas",
+  "projectName": "Huellitas Pet Shop",
+  "projectDescription": "Full-stack e-commerce platform for pet products with React frontend, .NET API, and PostgreSQL database",
+  "theme": "almond",
+  "primaryColor": "#FF8C42",
+  "lightColor": "#FFB380",
+  "darkColor": "#E67A2E",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "architecture"
+            ]
+          },
+          {
+            "group": "Frontend",
+            "pages": [
+              "frontend/setup",
+              "frontend/components",
+              "frontend/routing",
+              "frontend/cart-system"
+            ]
+          },
+          {
+            "group": "Backend",
+            "pages": [
+              "backend/setup",
+              "backend/project-structure",
+              "backend/authentication",
+              "backend/database"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/deployment",
+              "guides/data-pipeline",
+              "guides/admin-dashboard"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/login"
+            ]
+          },
+          {
+            "group": "Products",
+            "pages": [
+              "api/products/list",
+              "api/products/get",
+              "api/products/create",
+              "api/products/update",
+              "api/products/delete"
+            ]
+          },
+          {
+            "group": "Orders",
+            "pages": [
+              "api/orders/overview"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "E-commerce shopping cart with LocalStorage persistence",
+    "JWT-based authentication and authorization",
+    "Admin dashboard with user and product management",
+    "RESTful API with Swagger documentation",
+    "Responsive React SPA with React Router",
+    "PostgreSQL database with Entity Framework Core",
+    "Python data pipeline for automated product categorization",
+    "Docker containerization for deployment"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/login",
+    "GET /api/productos",
+    "GET /api/productos/{id}",
+    "POST /api/productos",
+    "PUT /api/productos/{id}",
+    "DELETE /api/productos/{id}",
+    "GET /api/pedidos",
+    "POST /api/pedidos"
+  ]
+}
